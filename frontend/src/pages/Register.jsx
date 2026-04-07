@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
+  const { register } = useAuth();
   const navigate = useNavigate();
   // State variables hold data that might change over time
   // formData stores all the input fields from the registration form
@@ -51,28 +52,20 @@ const Register = () => {
 
     // If everything is okay, we start loading and send data to the backend
     setLoading(true);
-    try {
-      // Send a POST request to our Node.js server to create the user
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role
-      });
+    
+    // Use the register function from useAuth context
+    const result = await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role
+    });
 
-      // If successful, the backend sends back a 'token' and 'user' data.
-      // We save these in localStorage so the user stays logged in even if they refresh the page.
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-
+    if (result.success) {
       alert('Registration successful! 🎉');
-      // Send the user to the login page after they register
       navigate('/login');
-    } catch (err) {
-      // If the backend sends an error (like "Email already exists"), we show it here
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      // Whether it succeeded or failed, stop the loading animation
+    } else {
+      setError(result.message);
       setLoading(false);
     }
   };

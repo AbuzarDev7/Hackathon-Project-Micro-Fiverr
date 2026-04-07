@@ -6,13 +6,25 @@ require("dotenv").config();
 const app = express();
 
 // ==================== MIDDLEWARE ====================
-// CORS allows your frontend (localhost:5173) to communicate with this backend (localhost:5000)
+// CORS configuration
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
+// Request logging with status codes
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
 
 // express.json() allows your app to parse JSON data sent from the frontend (like form submissions)
 app.use(express.json());
@@ -29,22 +41,23 @@ app.get("/", (req, res) => {
   res.json({ message: "🚀 Micro Fiverr API is running ok bro!" });
 });
 
-// ==================== MONGODB CONNECTION ====================
+// ==================== SERVER & DATABASE ====================
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
 
-// This connects your backend to the MongoDB database using the URI from your .env file
+// Start the server FIRST so it's always reachable from the frontend
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📡 Use the Health Check: http://localhost:${PORT}/`);
+});
+
+// Then try to connect to MongoDB
 mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected Successfully!");
-    // Once the database connects, we start the server listening on the PORT (5000)
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-    });
   })
   .catch((err) => {
-    // If the database connection fails, this will catch the error and show it in the console
     console.error("❌ MongoDB Connection Error:", err.message);
-    process.exit(1);
+    console.log("⚠️  Note: Your server is RUNNING but database is NOT connected.");
   });

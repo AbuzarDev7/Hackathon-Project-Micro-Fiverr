@@ -1,7 +1,11 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
+const API_URL = ''; // Empty string means use relative path (Vite proxy will handle it)
+
 const AuthContext = createContext();
+
+
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -19,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     const checkUser = async () => {
       if (token) {
         try {
-          const response = await axios.get('http://localhost:5000/api/auth/me');
+          const response = await axios.get(`${API_URL}/api/auth/me`);
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -36,7 +40,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       setToken(token);
@@ -53,7 +57,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', userData);
+      const response = await axios.post(`${API_URL}/api/auth/register`, userData);
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       setToken(token);
@@ -83,8 +87,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAuthenticated: !!user,
-    isProvider: user?.role === 'provider',
-    isCustomer: user?.role === 'customer' || user?.role === 'client', // Backend uses 'client' by default
+    isFreelancer: user?.role === 'freelancer', // Changed from provider to match backend
+    isCustomer: user?.role === 'client', // Backend uses 'client' by default
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
