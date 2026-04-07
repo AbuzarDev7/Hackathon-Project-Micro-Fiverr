@@ -12,7 +12,7 @@ const generateToken = (userId) => {
   });
 };
 
-// ==================== REGISTER ====================
+
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
@@ -66,7 +66,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// ==================== LOGIN ====================
+
 // POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
@@ -82,7 +82,7 @@ router.post("/login", async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password." });
+      return res.status(400).json({ message: "SomeThing Want Wrong" });
     }
 
     // Compare password using bcrypt
@@ -110,7 +110,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ==================== GET CURRENT USER ====================
+
 // GET /api/auth/me (Protected Route)
 router.get("/me", authMiddleware, async (req, res) => {
   try {
