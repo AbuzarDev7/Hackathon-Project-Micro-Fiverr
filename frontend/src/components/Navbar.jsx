@@ -45,11 +45,15 @@ const Navbar = () => {
 
         {/* Desktop Links */}
         <div className="hidden lg:flex items-center gap-8">
-          <Link to="/jobs" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Find Jobs</Link>
+          {user?.role !== 'client' && (
+            <Link to="/jobs" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Find Jobs</Link>
+          )}
           <Link to="/services" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Services</Link>
           {isAuthenticated && (
             <>
-              <Link to="/dashboard" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Dashboard</Link>
+              {user?.role === 'freelancer' && (
+                <Link to="/dashboard" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Dashboard</Link>
+              )}
               <Link to="/chat" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Messages</Link>
             </>
           )}
@@ -101,11 +105,15 @@ const Navbar = () => {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-2xl py-6 px-4 flex flex-col gap-4 animate-reveal">
-          <Link to="/jobs" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Find Jobs</Link>
+          {user?.role !== 'client' && (
+            <Link to="/jobs" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Find Jobs</Link>
+          )}
           <Link to="/services" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Browse Services</Link>
           {isAuthenticated && (
             <>
-              <Link to="/dashboard" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Dashboard</Link>
+              {user?.role === 'freelancer' && (
+                <Link to="/dashboard" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Dashboard</Link>
+              )}
               <Link to="/chat" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Chat Messages</Link>
             </>
           )}

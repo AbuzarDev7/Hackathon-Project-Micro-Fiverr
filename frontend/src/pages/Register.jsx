@@ -1,162 +1,186 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { MapPin, User, Mail, Lock, ShieldCheck } from 'lucide-react';
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  // State variables hold data that might change over time
-  // formData stores all the input fields from the registration form
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    role: 'client'
+    role: 'client', // Default to client
+    location: ''
   });
-  
-  // error stores any error messages we want to show the user
   const [error, setError] = useState('');
-  
-  // loading is true when we are waiting for the backend to reply (shows 'Creating Account...')
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  // This function runs every time the user types in an input field
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const handleChange = (e) => {
-    // We update only the specific field that was typed in (using e.target.name)
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear any previous errors because the user is trying again
     setError('');
   };
 
-  // This function runs when the user clicks the "Register" button
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevents the page from refreshing automatically
+    e.preventDefault();
     setError('');
 
-    // Basic Validation: Check if everything is filled out
-    if (!formData.name || !formData.email || !formData.password) {
-      setError('Please fill in all fields.');
-      return; // Stop the function here if there's an error
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!formData.name || !formData.email || !formData.password || !formData.role || !formData.location) {
+      setError('Please fill in all fields to join.');
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    // If everything is okay, we start loading and send data to the backend
     setLoading(true);
+    // TODO: connect API
+    // Note: register() in AuthContext might auto-login, 
+    // but the spec says redirect to /login.
+    const result = await register(formData);
     
-    // Use the register function from useAuth context
-    const result = await register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      role: formData.role
-    });
-
     if (result.success) {
-      alert('Registration successful! 🎉');
-      navigate('/login');
+      setSuccess(true);
+      setTimeout(() => {
+        // Redirection as per requirement:
+        navigate('/login');
+      }, 2000);
     } else {
       setError(result.message);
       setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-5 bg-slate-50 font-['Outfit']">
+        <div className="w-full max-w-[500px] p-12 bg-white border border-slate-100 rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 text-center">
+          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-8 animate-bounce">
+            <ShieldCheck size={40} />
+          </div>
+          <h1 className="text-3xl font-black text-slate-900 mb-2">Registration Complete!</h1>
+          <p className="text-slate-500 font-medium">Your account was created successfully. Redirecting you to login...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e]">
-      <div className="w-full max-w-[450px] p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_25px_50px_rgba(0,0,0,0.5)]">
-        <h1 className="text-white text-3xl font-bold text-center mb-1 font-['Inter']">Create Account</h1>
-        <p className="text-white/60 text-center mb-6 text-sm">Join Micro Fiverr today</p>
+    <div className="min-h-screen flex items-center justify-center p-5 lg:p-10 bg-slate-50 font-['Outfit'] mt-10">
+      <div className="w-full max-w-[580px] p-10 lg:p-14 bg-white border border-slate-100 rounded-[3rem] shadow-2xl shadow-indigo-100/50">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Create Account</h1>
+          <p className="text-slate-500 font-medium tracking-tight">Join Pakistan's leading local services marketplace.</p>
+        </div>
 
         {error && (
-          <div className="bg-[#ff3b30]/15 border border-[#ff3b30]/30 rounded-lg py-2.5 px-4 text-[#ff6b6b] text-sm mb-4 text-center">
+          <div className="bg-rose-50 border border-rose-100 rounded-2xl py-4 px-6 text-rose-600 text-sm mb-8 text-center animate-shake font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/70 text-[13px] font-medium">Full Name</label>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-2 flex flex-col gap-2">
+            <label className="text-slate-700 text-sm font-black px-2 flex items-center gap-2">
+              <User size={14} className="text-indigo-600" />
+              Full Name
+            </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter your name"
-              className="bg-white/10 border border-white/15 rounded-lg py-3 px-4 text-white text-[15px] outline-none transition-colors duration-300 focus:border-white/30 font-['Inter']"
+              placeholder="e.g. Abuzar Dev"
+              className="bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-slate-900 text-base outline-none transition-all duration-300 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm"
+              required
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/70 text-[13px] font-medium">Email</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-700 text-sm font-black px-2 flex items-center gap-2">
+              <Mail size={14} className="text-indigo-600" />
+              Email
+            </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email"
-              className="bg-white/10 border border-white/15 rounded-lg py-3 px-4 text-white text-[15px] outline-none transition-colors duration-300 focus:border-white/30 font-['Inter']"
+              placeholder="name@gmail.com"
+              className="bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-slate-900 text-base outline-none transition-all duration-300 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm"
+              required
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/70 text-[13px] font-medium">Role</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-700 text-sm font-black px-2 flex items-center gap-2">
+              <MapPin size={14} className="text-indigo-600" />
+              Location
+            </label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="City, State"
+              className="bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-slate-900 text-base outline-none transition-all duration-300 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm"
+              required
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-700 text-sm font-black px-2 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-indigo-600" />
+              Role
+            </label>
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="bg-white/10 border border-white/15 rounded-lg py-3 px-4 text-white text-[15px] outline-none transition-colors duration-300 focus:border-white/30 font-['Inter'] [&>option]:text-black"
+              className="bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-slate-900 text-base outline-none appearance-none transition-all duration-300 focus:bg-white focus:border-indigo-400 shadow-sm"
             >
-              <option value="client">Client</option>
-              <option value="freelancer">Freelancer</option>
+              <option value="client">Client (Hiring)</option>
+              <option value="freelancer">Freelancer (Working)</option>
             </select>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/70 text-[13px] font-medium">Password</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-700 text-sm font-black px-2 flex items-center gap-2">
+              <Lock size={14} className="text-indigo-600" />
+              Password
+            </label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Minimum 6 characters"
-              className="bg-white/10 border border-white/15 rounded-lg py-3 px-4 text-white text-[15px] outline-none transition-colors duration-300 focus:border-white/30 font-['Inter']"
+              placeholder="••••••••"
+              className="bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-slate-900 text-base outline-none transition-all duration-300 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm"
+              required
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/70 text-[13px] font-medium">Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Re-enter password"
-              className="bg-white/10 border border-white/15 rounded-lg py-3 px-4 text-white text-[15px] outline-none transition-colors duration-300 focus:border-white/30 font-['Inter']"
-            />
+          <div className="md:col-span-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-4 py-5 bg-indigo-600 hover:bg-black rounded-2xl text-white text-lg font-black transition-all duration-300 shadow-xl shadow-indigo-100 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+            >
+              {loading ? 'Processing...' : 'Register Account'}
+            </button>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-lg text-white text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {loading ? 'Creating Account...' : 'Register'}
-          </button>
         </form>
 
-        <p className="text-white/60 text-center text-sm mt-6">
+        <p className="text-slate-500 text-center font-bold text-sm mt-10">
           Already have an account?{' '}
-          <Link to="/login" className="text-[#667eea] font-semibold no-underline hover:text-white transition-colors duration-200">
-            Login here
+          <Link to="/login" className="text-indigo-600 font-black hover:underline transition-all">
+            Login now
           </Link>
         </p>
       </div>

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../App';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -11,6 +12,13 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -27,11 +35,20 @@ const Login = () => {
     }
 
     setLoading(true);
+    // TODO: connect API
     const result = await login(formData.email, formData.password);
     
     if (result.success) {
-      alert('Login successful! 🎉');
-      navigate('/');
+      console.log('👤 Login successful, role:', result.user.role);
+      
+      // Role based redirect as per requirement:
+      if (result.user.role === 'client') {
+        navigate('/dashboard/client');
+      } else if (result.user.role === 'freelancer') {
+        navigate('/dashboard/provider');
+      } else {
+        navigate('/');
+      }
     } else {
       setError(result.message);
       setLoading(false);
@@ -39,55 +56,59 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e]">
-      <div className="w-full max-w-[450px] p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_25px_50px_rgba(0,0,0,0.5)]">
-        <h1 className="text-white text-3xl font-bold text-center mb-1 font-['Inter']">Welcome Back</h1>
-        <p className="text-white/60 text-center mb-7 text-sm">Login to your Micro Fiverr account</p>
+    <div className="min-h-screen flex items-center justify-center p-5 bg-slate-50 font-['Outfit']">
+      <div className="w-full max-w-[480px] p-12 bg-white border border-slate-100 rounded-[2.5rem] shadow-2xl shadow-indigo-100/50">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-black text-slate-900 mb-2">Welcome Back</h1>
+          <p className="text-slate-500 font-medium tracking-tight">Login to your Micro Fiverr account</p>
+        </div>
 
         {error && (
-          <div className="bg-[#ff3b30]/15 border border-[#ff3b30]/30 rounded-lg py-2.5 px-4 text-[#ff6b6b] text-sm mb-4 text-center">
+          <div className="bg-rose-50 border border-rose-100 rounded-2xl py-4 px-6 text-rose-600 text-sm mb-8 text-center animate-shake font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/70 text-[13px] font-medium">Email</label>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-700 text-sm font-black px-2">Email</label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email"
-              className="bg-white/10 border border-white/15 rounded-lg py-3 px-4 text-white text-[15px] outline-none transition-colors duration-300 focus:border-white/30 font-['Inter']"
+              placeholder="name@example.com"
+              className="bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-slate-900 text-base outline-none transition-all duration-300 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm"
+              required
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/70 text-[13px] font-medium">Password</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-700 text-sm font-black px-2">Password</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your password"
-              className="bg-white/10 border border-white/15 rounded-lg py-3 px-4 text-white text-[15px] outline-none transition-colors duration-300 focus:border-white/30 font-['Inter']"
+              placeholder="••••••••"
+              className="bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-slate-900 text-base outline-none transition-all duration-300 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm"
+              required
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-lg text-white text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full mt-4 py-5 bg-indigo-600 hover:bg-black rounded-2xl text-white text-lg font-black transition-all duration-300 shadow-xl shadow-indigo-100 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Logging in...' : 'Login Now'}
           </button>
         </form>
 
-        <p className="text-white/60 text-center text-sm mt-6">
+        <p className="text-slate-500 text-center font-bold text-sm mt-10">
           Don't have an account?{' '}
-          <Link to="/register" className="text-[#667eea] font-semibold no-underline hover:text-white transition-colors duration-200">
-            Register here
+          <Link to="/register" className="text-indigo-600 font-black hover:underline transition-all">
+            Join the community
           </Link>
         </p>
       </div>

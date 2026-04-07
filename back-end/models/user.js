@@ -54,6 +54,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    lat: {
+      type: Number,
+      default: 24.8607, // Default Karachi lat
+    },
+    long: {
+      type: Number,
+      default: 67.0011, // Default Karachi long
+    },
   },
   {
     timestamps: true,

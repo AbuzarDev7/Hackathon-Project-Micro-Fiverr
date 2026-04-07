@@ -1,7 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
-const authMiddleware = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -112,7 +112,7 @@ router.post("/login", async (req, res) => {
 
 
 // GET /api/auth/me (Protected Route)
-router.get("/me", authMiddleware, async (req, res) => {
+router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
     res.status(200).json({ user });
