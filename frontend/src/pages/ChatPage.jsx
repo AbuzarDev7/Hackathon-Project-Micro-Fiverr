@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Send, 
@@ -15,47 +18,176 @@ import {
 } from 'lucide-react';
 
 const ChatPage = () => {
-  const { user } = useAuth();
-  const [activeChat, setActiveChat] = useState('p1');
+  const { user, token } = useAuth();
+  const location = useLocation();
+  const [activeChat, setActiveChat] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const scrollRef = useRef();
+  const [socket, setSocket] = useState(null);
 
-  // Mock Conversations List
-  const conversations = [
-    { id: 'p1', name: 'Zain Ahmed', lastMsg: 'I am available for the plumbing repair...', time: '10:30 AM', unread: 2, online: true },
-    { id: 'p2', name: 'Ms. Sarah', lastMsg: 'Tomorrow 4 PM works for the session.', time: 'Yesterday', unread: 0, online: false },
-    { id: 'p3', name: 'CleanPro Services', lastMsg: 'Our team will arrive by 9 AM.', time: 'Monday', unread: 0, online: true },
-    { id: 'p4', name: 'Sajid Plumber', lastMsg: 'The material cost will be separate.', time: 'Jan 28', unread: 0, online: false },
-  ];
+  // Initialize Socket.io
+  useEffect(() => {
+    const newSocket = io("http://localhost:5000");
+    setSocket(newSocket);
 
-  // Mock Messages for Active Chat
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'Hi Zain, are you available tomorrow morning for a quick plumbing fix?', sender: 'me', time: '10:00 AM' },
-    { id: 2, text: 'Hello! Yes, I am available tomorrow between 9 AM and 11 AM.', sender: 'them', time: '10:05 AM' },
-    { id: 3, text: 'That sounds perfect. The address is Gulshan Block 4.', sender: 'me', time: '10:06 AM' },
-    { id: 4, text: 'I am available for the plumbing repair. I will see you then!', sender: 'them', time: '10:30 AM' },
-  ]);
+    if (user && user._id) {
+      newSocket.emit("join_room", user._id);
+    }
+
+    newSocket.on("receive_message", (data) => {
+      setMessages((prev) => [...prev, {
+        id: Date.now(),
+        text: data.text,
+        sender: 'them',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      }]);
+      // If the message is from the active chat, we should mark it read automatically
+      // But for simplicity, the useEffect watching activeChat/messages handles it.
+    });
+
+    newSocket.on("messages_read", ({ readerId }) => {
+      setMessages((prev) => 
+        prev.map(msg => msg.sender === 'me' ? { ...msg, isRead: true } : msg)
+      );
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [user]);
+
+  // Fetch Conversations once
+  useEffect(() => {
+    const fetchConvos = async () => {
+      if(!token) return;
+      try {
+        const res = await axios.get('/api/chat/conversations', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setConversations(res.data);
+        if(res.data.length > 0) {
+          setActiveChat(res.data[0].id);
+        }
+      } catch (err) {
+        console.error("Error fetching conversations", err);
+      }
+    };
+    fetchConvos();
+  }, [token]);
+
+  // Fetch messages when activeChat changes
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if(!activeChat || !token) return;
+      try {
+        const res = await axios.get(`/api/chat/${activeChat}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const formatted = res.data.map(msg => ({
+          id: msg._id,
+          text: msg.message,
+          sender: msg.sender === user?._id ? 'me' : 'them',
+          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isRead: msg.isRead
+        }));
+        setMessages(formatted);
+
+        // Mark as read immediately when opened
+        const hasUnreadFromThem = res.data.some(msg => msg.sender !== user?._id && !msg.isRead);
+        if (hasUnreadFromThem) {
+           await axios.put(`/api/chat/${activeChat}/read`, {}, { headers: { Authorization: `Bearer ${token}` } });
+           if(socket) {
+             socket.emit("mark_read", { senderId: activeChat, readerId: user?._id });
+           }
+        }
+      } catch (err) {
+        console.error("Error fetching messages", err);
+      }
+    };
+    fetchMessages();
+  }, [activeChat, token, user]);
+
+  // Handle Intro Message from other pages
+  useEffect(() => {
+    if (location.state?.introProvider && socket && token) {
+      const provider = location.state.introProvider;
+      const text = location.state.introMessage;
+
+      if (window._introSent === provider._id) return;
+      window._introSent = provider._id;
+
+      const sendIntro = async () => {
+        try {
+          const config = { headers: { Authorization: `Bearer ${token}` } };
+          await axios.post('/api/chat', { receiverId: provider._id, message: text }, config);
+          
+          socket.emit("send_message", {
+            senderId: user?._id,
+            receiverId: provider._id,
+            text
+          });
+
+          setConversations(prev => {
+            if (!prev.find(c => c.id === provider._id)) {
+              return [{
+                id: provider._id,
+                name: provider.name || 'User',
+                lastMsg: text,
+                time: 'Just now',
+                unread: 0,
+                online: true
+              }, ...prev];
+            }
+            return prev;
+          });
+          
+          setActiveChat(provider._id);
+        } catch (err) {
+          console.error("Error sending intro message", err);
+        }
+      };
+      
+      sendIntro();
+    }
+  }, [location.state, socket, token, user]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !activeChat) return;
     
-    const newMsg = {
-      id: Date.now(),
-      text: message,
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    setMessages([...messages, newMsg]);
-    setMessage('');
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.post('/api/chat', { receiverId: activeChat, message }, config);
 
-    // TODO: Socket.io emit message
-    // TODO: connect API POST /api/messages
+      const newMsg = {
+        id: Date.now(),
+        text: message,
+        sender: 'me',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      };
+      
+      setMessages([...messages, newMsg]);
+      setMessage('');
+
+      if (socket) {
+        socket.emit("send_message", {
+          senderId: user?._id,
+          receiverId: activeChat,
+          text: message
+        });
+      }
+    } catch (err) {
+      console.error("Error sending message", err);
+    }
   };
 
   const selectedChat = conversations.find(c => c.id === activeChat);
@@ -118,13 +250,13 @@ const ChatPage = () => {
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-400"><ArrowLeft size={20} /></button>
              <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-black text-lg">
-               {selectedChat?.name.charAt(0)}
+               {selectedChat?.name?.charAt(0) || '?'}
              </div>
              <div>
-               <h3 className="font-black text-slate-900 text-lg leading-tight">{selectedChat?.name}</h3>
+               <h3 className="font-black text-slate-900 text-lg leading-tight">{selectedChat?.name || 'Select a Conversation'}</h3>
                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                  {selectedChat?.online ? 'Online' : 'Away'}
+                  {selectedChat?.online ? 'Online' : 'Active'}
                </p>
              </div>
           </div>
@@ -162,7 +294,7 @@ const ChatPage = () => {
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
                     {msg.time}
                   </span>
-                  {msg.sender === 'me' && <CheckCheck size={12} className="text-indigo-400" />}
+                  {msg.sender === 'me' && <CheckCheck size={14} className={msg.isRead ? "text-blue-500" : "text-slate-400"} />}
                 </div>
               </div>
             </div>

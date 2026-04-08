@@ -13,10 +13,7 @@
     "@react-google-maps/api": "^2.20.8",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.14.0",
-<<<<<<< HEAD
-=======
     "framer-motion": "^12.38.0",
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

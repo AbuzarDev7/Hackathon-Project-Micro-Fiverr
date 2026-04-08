@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const Service = require("../models/service");
-const authMiddleware = require("../middleware/authMiddleware");
+const { protect, authorize } = require("../middleware/authMiddleware");
 
 // GET /api/services - Get all services
 router.get("/", async (req, res) => {
   try {
     const services = await Service.find()
-      .populate("provider", "name email location")
+      .populate("providerId", "name email location")
       .sort({ createdAt: -1 });
     res.status(200).json(services);
   } catch (error) {
@@ -16,12 +16,9 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/services/provider - Get services by the logged-in provider
-router.get("/provider", authMiddleware, async (req, res) => {
+router.get("/provider", protect, authorize("freelancer"), async (req, res) => {
   try {
-    if (req.user.role !== "freelancer") {
-      return res.status(403).json({ message: "Not authorized." });
-    }
-    const services = await Service.find({ provider: req.user._id }).sort({ createdAt: -1 });
+    const services = await Service.find({ providerId: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json(services);
   } catch (error) {
     res.status(500).json({ message: "Error fetching provider services", error: error.message });
@@ -29,23 +26,30 @@ router.get("/provider", authMiddleware, async (req, res) => {
 });
 
 // POST /api/services - Create a new service
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", protect, authorize("freelancer"), async (req, res) => {
   try {
-    if (req.user.role !== "freelancer") {
-      return res.status(403).json({ message: "Only freelancers can create services." });
+    console.log("📥 [Body] Post Service:", req.body);
+    const { title, description, price, category, location, image } = req.body;
+    
+    // Validate required fields explicitly
+    if (!title || !description || !price || !category || !location) {
+      return res.status(400).json({ message: "All fields except image are required." });
     }
 
-    const { title, description, price, category } = req.body;
     const service = await Service.create({
       title,
       description,
-      price,
+      price: Number(price), // Ensure it's a number
       category,
-      provider: req.user._id,
+      location,
+      image,
+      providerId: req.user._id,
     });
 
+    console.log("✅ [Success] Service created:", service._id);
     res.status(201).json(service);
   } catch (error) {
+    console.error("❌ [Error] Creating service:", error);
     res.status(500).json({ message: "Error creating service", error: error.message });
   }
 });

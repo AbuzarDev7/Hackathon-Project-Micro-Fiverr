@@ -48,6 +48,7 @@ const Navbar = () => {
           {user?.role !== 'client' && (
             <Link to="/jobs" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Find Jobs</Link>
           )}
+          <Link to="/" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Home</Link>
           <Link to="/services" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Services</Link>
           {isAuthenticated && (
             <>
@@ -105,6 +106,7 @@ const Navbar = () => {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-2xl py-6 px-4 flex flex-col gap-4 animate-reveal">
+          <Link to="/" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Home</Link>
           {user?.role !== 'client' && (
             <Link to="/jobs" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Find Jobs</Link>
           )}

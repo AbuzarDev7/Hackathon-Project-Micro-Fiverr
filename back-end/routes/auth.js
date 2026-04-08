@@ -123,7 +123,7 @@ router.get("/me", protect, async (req, res) => {
 
 
 // PUT /api/auth/profile (Protected Route)
-router.put("/profile", authMiddleware, async (req, res) => {
+router.put("/profile", protect, async (req, res) => {
   try {
     const { name, avatar, phone, bio, skills, location } = req.body;
     const user = await User.findById(req.user._id);

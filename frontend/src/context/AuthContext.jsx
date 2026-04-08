@@ -2,10 +2,9 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
 const API_URL = ''; // Empty string means use relative path (Vite proxy will handle it)
+axios.defaults.baseURL = ''; 
 
 const AuthContext = createContext();
-
-
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -35,12 +34,8 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         console.log('📡 Checking user status...');
         try {
-<<<<<<< HEAD
-          const response = await axios.get('/api/auth/me');
-=======
           const response = await axios.get(`${API_URL}/api/auth/me`);
           console.log('✅ User check successful');
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
           setUser(response.data.user);
         } catch (error) {
           console.error('❌ Auth check failed:', error.response?.data?.message || error.message);
@@ -65,15 +60,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     console.log(`📡 Attempting login for: ${email}`);
     try {
-<<<<<<< HEAD
-      const response = await axios.post('/api/auth/login', { email, password });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      return { success: true, user }; // ✅ return user so Login.jsx can check role
-=======
       const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       const { token: newToken, user: newUser } = response.data;
       
@@ -84,10 +70,21 @@ export const AuthProvider = ({ children }) => {
       
       console.log('✅ Login successful');
       return { success: true, user: newUser };
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
     } catch (error) {
-      const msg = error.response?.data?.message || 'Login failed';
-      console.error('❌ Login error:', msg);
+      console.error('❌ Login error detailed:', error);
+      let msg = 'Login failed';
+      
+      if (error.response) {
+        // The server responded with a status code that falls out of the range of 2xx
+        msg = error.response.data?.message || `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        // The request was made but no response was received
+        msg = 'No response from server. Please check if your backend is running.';
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        msg = error.message;
+      }
+      
       setLoading(false);
       return { success: false, message: msg };
     }
@@ -97,15 +94,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     console.log(`📡 Attempting registration for: ${userData.email}`);
     try {
-<<<<<<< HEAD
-      const response = await axios.post('/api/auth/register', userData);
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      return { success: true, user }; // ✅ return user so Register.jsx can check role
-=======
       const response = await axios.post(`${API_URL}/api/auth/register`, userData);
       const { token: newToken, user: newUser } = response.data;
       
@@ -116,10 +104,18 @@ export const AuthProvider = ({ children }) => {
       
       console.log('✅ Registration successful');
       return { success: true, user: newUser };
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
     } catch (error) {
-      const msg = error.response?.data?.message || 'Registration failed';
-      console.error('❌ Registration error:', msg);
+      console.error('❌ Registration error detailed:', error);
+      let msg = 'Registration failed';
+      
+      if (error.response) {
+        msg = error.response.data?.message || `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        msg = 'No response from server. Please check if your backend is running.';
+      } else {
+        msg = error.message;
+      }
+      
       setLoading(false);
       return { success: false, message: msg };
     }
@@ -140,14 +136,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAuthenticated: !!user,
-<<<<<<< HEAD
-    isProvider: user?.role === 'freelancer', 
-    isCustomer: user?.role === 'client', // Backend defaults to 'client' for customers
+    isFreelancer: user?.role === 'freelancer', 
+    isCustomer: user?.role === 'client', 
     isAdmin: user?.role === 'admin'
-=======
-    isFreelancer: user?.role === 'freelancer', // Changed from provider to match backend
-    isCustomer: user?.role === 'client', // Backend uses 'client' by default
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

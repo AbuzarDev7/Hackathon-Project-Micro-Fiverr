@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-<<<<<<< HEAD
-=======
-import { ROLES } from '../App';
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
 
 const Login = () => {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,42 +31,18 @@ const Login = () => {
     }
 
     setLoading(true);
-<<<<<<< HEAD
     try {
       const result = await login(formData.email, formData.password);
 
-      if (!result.success) {
-        setError(result.message);
-        return;
-      }
-
-      // role comes from the API response (returned in result.user)
-      if (result.user?.role === 'freelancer') {
+      if (result.success) {
+        console.log('👤 Login successful, role:', result.user.role);
         navigate('/dashboard');
       } else {
-        navigate('/');
+        setError(result.message);
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
     } finally {
-=======
-    // TODO: connect API
-    const result = await login(formData.email, formData.password);
-    
-    if (result.success) {
-      console.log('👤 Login successful, role:', result.user.role);
-      
-      // Role based redirect as per requirement:
-      if (result.user.role === 'client') {
-        navigate('/dashboard/client');
-      } else if (result.user.role === 'freelancer') {
-        navigate('/dashboard/provider');
-      } else {
-        navigate('/');
-      }
-    } else {
-      setError(result.message);
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
       setLoading(false);
     }
   };

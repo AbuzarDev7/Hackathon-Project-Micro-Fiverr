@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const Review = require("../models/review");
-const authMiddleware = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
 // POST /api/reviews - Leave a review
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", protect, async (req, res) => {
   try {
     const { receiverId, jobId, rating, comment } = req.body;
     const review = await Review.create({

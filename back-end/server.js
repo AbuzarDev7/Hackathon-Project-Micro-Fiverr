@@ -1,51 +1,78 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // allow all frontend origins
+    methods: ["GET", "POST"]
+  }
+});
+
+// ==================== SOCKET.IO SETUP ====================
+io.on("connection", (socket) => {
+  console.log(`🔌 Socket Connected: ${socket.id}`);
+
+  // User joins their personal room based on their MongoDB User ID
+  socket.on("join_room", (userId) => {
+    socket.join(userId);
+    console.log(`👤 User joined room: ${userId}`);
+  });
+
+  // Handle incoming messages
+  socket.on("send_message", (data) => {
+    console.log("💬 Message sent via Socket:", data);
+    if (data.receiverId) {
+      io.to(data.receiverId).emit("receive_message", data);
+    }
+  });
+
+  // Handle read receipts
+  socket.on("mark_read", ({ senderId, readerId }) => {
+    if (senderId) {
+      io.to(senderId).emit("messages_read", { readerId });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`🔌 Socket Disconnected: ${socket.id}`);
+  });
+});
 
 // ==================== MIDDLEWARE ====================
-<<<<<<< HEAD
-// CORS allows your frontend (localhost:5173) to communicate with this backend (localhost:5000)
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
-];
-
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
-=======
 // CORS configuration
-// In development, we can be more permissive to rule out CORS-origin mismatches
 app.use(
   cors({
-    origin: true, // Allow all origins in dev
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
+    origin: true, // Allow all origins in dev for easier connectivity
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
-// express.json() allows your app to parse JSON data sent from the frontend (like form submissions)
+// express.json() allows your app to parse JSON data sent from the frontend
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging with status codes (placed after body parser to log bodies)
+// Request logging with status codes
 app.use((req, res, next) => {
   const start = Date.now();
   console.log(`📡 [Incoming] ${req.method} ${req.url}`);
-  if (req.url.startsWith('/api/auth') && req.method === 'POST') {
-    console.log(`📦 Body:`, { ...req.body, password: '***' });
+  if (req.method === 'POST') {
+    const bodyCopy = { ...(req.body || {}) };
+    if (bodyCopy.password) bodyCopy.password = '***';
+    console.log(`📦 Body [${req.method} ${req.url}]:`, bodyCopy);
   }
   
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`✅ [Finished] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
+    const statusColor = res.statusCode >= 400 ? '❌' : '✅';
+    console.log(`${statusColor} [Finished] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
   });
   next();
 });
@@ -53,23 +80,18 @@ app.use((req, res, next) => {
 // ==================== ROUTES ====================
 const authRoutes = require("./routes/auth");
 
-// This connects the "/api/auth" URL to all the logic inside "routes/auth.js"
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", require("./routes/jobs"));
-<<<<<<< HEAD
 app.use("/api/services", require("./routes/services"));
 app.use("/api/chat", require("./routes/chat"));
 app.use("/api/reviews", require("./routes/reviews"));
-=======
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
 
-// Simple health check route just to see if the server is running when you visit http://localhost:5000/
+// Simple health check route
 app.get("/", (req, res) => {
   res.json({ message: "🚀 Micro Fiverr API is running ok bro!" });
 });
 
 // ==================== CATCH ALL 404 (JSON) ====================
-// This prevents the "OpaqueResponseBlocking" error by ensuring we don't return HTML
 app.use((req, res) => {
   res.status(404).json({ message: "⚠️ Route not found. Check your API URL." });
 });
@@ -84,7 +106,6 @@ app.use((err, req, res, next) => {
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
 
-<<<<<<< HEAD
 const connectDB = async () => {
   try {
     await mongoose.connect(MONGO_URI);
@@ -104,28 +125,25 @@ mongoose.connection.on("reconnected", () => {
   console.log("✅ MongoDB reconnected successfully!");
 });
 
-// Start the Express server unconditionally to ensure APIs remain reachable
-app.listen(PORT, () => {
+// ==================== ERROR HANDLING (GLOBAL) ====================
+process.on('uncaughtException', (err) => {
+  console.error('💥 UNCAUGHT EXCEPTION! Shutting down...');
+  console.error(err.name, err.message, err.stack);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.log('💥 UNHANDLED REJECTION! Shutting down...');
+  console.log(err.name, err.message);
+  process.exit(1);
+});
+
+// Start the Server unconditionally to ensure APIs remain reachable
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📡 Use the Health Check: http://localhost:${PORT}/`);
+  console.log(`💡 Note: If you see 502 error, make sure ONLY ONE terminal is running the backend.`);
 });
 
 // Connect to Database
 connectDB();
-=======
-// Start the server FIRST so it's always reachable from the frontend
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📡 Use the Health Check: http://localhost:${PORT}/`);
-});
-
-// Then try to connect to MongoDB
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB Connected Successfully!");
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB Connection Error:", err.message);
-    console.log("⚠️  Note: Your server is RUNNING but database is NOT connected.");
-  });
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc

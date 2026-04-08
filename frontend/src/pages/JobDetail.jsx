@@ -107,9 +107,16 @@ const JobDetail = () => {
                 Apply for this Job
               </button>
               
-              <button className="w-full mt-4 py-5 bg-white border-2 border-slate-200 hover:border-indigo-600 text-slate-900 rounded-3xl font-black text-xl transition-all">
+              <Link 
+                to="/chat"
+                state={{
+                  introProvider: job.postedBy,
+                  introMessage: `Hi! I want to discuss your job posting: "${job.title}"`
+                }}
+                className="block text-center w-full mt-4 py-5 bg-white border-2 border-slate-200 hover:border-indigo-600 text-slate-900 rounded-3xl font-black text-xl transition-all"
+              >
                 Send Message
-              </button>
+              </Link>
             </div>
 
             {/* Client Info Card */}

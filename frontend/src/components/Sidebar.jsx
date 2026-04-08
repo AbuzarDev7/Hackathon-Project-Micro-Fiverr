@@ -22,7 +22,7 @@ const Sidebar = () => {
     { name: 'Browse Jobs', icon: Search, path: '/jobs' },
     { name: 'My Applications', icon: ClipboardList, path: '/dashboard/provider/applications' },
     { name: 'Chat', icon: MessageSquare, path: '/chat' },
-    { name: 'Profile', icon: User, path: '/profile/edit' },
+    { name: 'Profile', icon: User, path: '/profile' },
   ];
 
   const clientNavItems = [
@@ -31,7 +31,7 @@ const Sidebar = () => {
     { name: 'My Posted Jobs', icon: ClipboardList, path: '/dashboard/client/my-jobs' },
     { name: 'Browse Services', icon: Briefcase, path: '/services' },
     { name: 'Messages', icon: MessageSquare, path: '/chat' },
-    { name: 'My Profile', icon: User, path: '/profile/edit' },
+    { name: 'My Profile', icon: User, path: '/profile' },
   ];
 
   const navItems = user?.role === 'freelancer' ? freelancerNavItems : clientNavItems;

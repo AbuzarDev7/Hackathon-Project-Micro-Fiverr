@@ -4,20 +4,12 @@ const jobSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-<<<<<<< HEAD
       required: [true, "Job title is required"],
-=======
-      required: [true, "Title is required"],
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
       trim: true,
     },
     description: {
       type: String,
-<<<<<<< HEAD
       required: [true, "Job description is required"],
-=======
-      required: [true, "Description is required"],
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
     },
     budget: {
       type: Number,
@@ -43,7 +35,6 @@ const jobSchema = new mongoose.Schema(
       enum: ["open", "in-progress", "completed"],
       default: "open",
     },
-<<<<<<< HEAD
     hiredFreelancer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -55,8 +46,6 @@ const jobSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-=======
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
   },
   {
     timestamps: true,

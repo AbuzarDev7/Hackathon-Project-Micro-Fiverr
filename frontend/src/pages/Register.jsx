@@ -1,21 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-<<<<<<< HEAD
-=======
 import { MapPin, User, Mail, Lock, ShieldCheck } from 'lucide-react';
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
 
 const Register = () => {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-<<<<<<< HEAD
-  const { register } = useAuth();
-  // State variables hold data that might change over time
-  // formData stores all the input fields from the registration form
-=======
   
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,44 +40,20 @@ const Register = () => {
     }
 
     setLoading(true);
-<<<<<<< HEAD
     try {
-      const result = await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role
-      });
- 
-      if (!result.success) {
-        setError(result.message);
-        return;
-      }
- 
-      // role comes directly from result.user returned by register()
-      if (result.user?.role === 'freelancer') {
-        navigate('/dashboard');
+      const result = await register(formData);
+      
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       } else {
-        navigate('/');
+        setError(result.message);
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
     } finally {
-=======
-    // TODO: connect API
-    // Note: register() in AuthContext might auto-login, 
-    // but the spec says redirect to /login.
-    const result = await register(formData);
-    
-    if (result.success) {
-      setSuccess(true);
-      setTimeout(() => {
-        // Redirection as per requirement:
-        navigate('/login');
-      }, 2000);
-    } else {
-      setError(result.message);
->>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
       setLoading(false);
     }
   };

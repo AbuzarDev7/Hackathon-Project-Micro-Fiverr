@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import axios from 'axios';
 import { 
   User, 
   MapPin, 
@@ -9,41 +10,81 @@ import {
   ArrowLeft, 
   ShieldCheck, 
   Camera,
-  CheckCircle2
+  CheckCircle2,
+  Phone,
+  BookOpen,
+  Wrench,
+  X
 } from 'lucide-react';
 
 const EditProfile = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: user?.name || '',
     location: user?.location || '',
-    profilePic: '' // URL
+    avatar: user?.avatar || '',
+    bio: user?.bio || '',
+    phone: user?.phone || '',
+    skills: user?.skills || []
   });
+  const [newSkill, setNewSkill] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Cloudinary Widget Setup
+  const handleUpload = () => {
+    const myWidget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: 'dfu6dxt8o',
+        uploadPreset: 'user-img',
+      },
+      (error, result) => {
+        if (!error && result && result.event === "success") {
+          console.log("Upload success:", result.info);
+          setFormData(prev => ({ ...prev, avatar: result.info.secure_url }));
+        }
+      }
+    );
+    myWidget.open();
+  };
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const addSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData({ ...formData, skills: [...formData.skills, newSkill.trim()] });
+      setNewSkill('');
+    }
+  };
+
+  const removeSkill = (skillToRemove) => {
+    setFormData({ ...formData, skills: formData.skills.filter(s => s !== skillToRemove) });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // TODO: connect API
-      // await axios.put('/api/users/profile', formData);
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      await axios.put('/api/auth/profile', formData, config);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+      window.location.reload(); 
     } catch (err) {
-      alert('Failed to update profile.');
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to update profile.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-8 font-['Outfit'] space-y-10 animate-in fade-in duration-700">
+    <div className="max-w-5xl mx-auto p-4 sm:p-8 font-['Outfit'] space-y-10 animate-in fade-in duration-700">
       {/* HEADER */}
       <div className="flex items-center justify-between gap-6 pb-6 border-b border-slate-100">
         <div className="flex items-center gap-6">
@@ -70,9 +111,12 @@ const EditProfile = () => {
         {/* PROFILE PREVIEW */}
         <div className="bg-white p-10 border border-slate-100 rounded-[3rem] shadow-sm flex flex-col items-center text-center space-y-6">
            <div className="relative group p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-indigo-500 rounded-[2.5rem] shadow-2xl shadow-indigo-100">
-              <div className="w-32 h-32 bg-white rounded-[2.2rem] flex items-center justify-center text-indigo-600 text-4xl font-black overflow-hidden relative border-4 border-white">
-                {formData.profilePic ? (
-                  <img src={formData.profilePic} alt="Profile" className="w-full h-full object-cover" />
+              <div 
+                onClick={handleUpload}
+                className="w-32 h-32 bg-white rounded-[2.2rem] flex items-center justify-center text-indigo-600 text-4xl font-black overflow-hidden relative border-4 border-white cursor-pointer"
+              >
+                {formData.avatar ? (
+                  <img src={formData.avatar} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   formData.name.charAt(0) || 'U'
                 )}
@@ -90,7 +134,7 @@ const EditProfile = () => {
            </div>
            <div className="px-6 py-2 bg-indigo-50 text-indigo-600 rounded-full font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
               <ShieldCheck size={12} />
-              Verified Client
+              {user?.role?.toUpperCase() || 'USER'}
            </div>
         </div>
 
@@ -98,53 +142,106 @@ const EditProfile = () => {
         <div className="lg:col-span-2">
           <form onSubmit={handleSubmit} className="bg-white p-10 md:p-14 border border-slate-100 rounded-[3.5rem] shadow-2xl shadow-indigo-100/50 space-y-8 relative overflow-hidden">
              
-             {/* Name */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Name */}
+                <div className="space-y-3 group">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                    <input 
+                      type="text" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="e.g. Abuzar Dev"
+                      className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-3 group">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Location</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                    <input 
+                      type="text" 
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      placeholder="e.g. Karachi, Sindh"
+                      className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-3 group">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                    <input 
+                      type="text" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="+92 3XX XXXXXXX"
+                      className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Avatar URL (Hidden but updated by Widget) */}
+                <input type="hidden" name="avatar" value={formData.avatar} />
+             </div>
+
+             {/* Bio */}
              <div className="space-y-3 group">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Full Name</label>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Professional Bio</label>
                <div className="relative">
-                 <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
-                 <input 
-                   type="text" 
-                   name="name"
-                   value={formData.name}
+                 <BookOpen className="absolute left-6 top-8 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                 <textarea 
+                   name="bio"
+                   value={formData.bio}
                    onChange={handleChange}
-                   placeholder="e.g. Abuzar Dev"
-                   className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
-                   required
+                   rows={4}
+                   placeholder="Describe what you do..."
+                   className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[2rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium resize-none"
                  />
                </div>
              </div>
 
-             {/* Location */}
+             {/* Skills */}
              <div className="space-y-3 group">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Location (City, State)</label>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Skills (Press Enter to add)</label>
                <div className="relative">
-                 <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                 <Wrench className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
                  <input 
-                   type="text" 
-                   name="location"
-                   value={formData.location}
-                   onChange={handleChange}
-                   placeholder="e.g. Karachi, Sindh"
-                   className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
-                   required
+                    type="text" 
+                    value={newSkill}
+                    onChange={(e) => setNewSkill(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                    placeholder="e.g. Web Development"
+                    className="w-full pl-16 pr-24 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
                  />
+                 <button 
+                  type="button"
+                  onClick={addSkill}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 px-4 py-2 bg-indigo-600 text-white text-xs font-black rounded-xl hover:bg-black transition-colors"
+                 >
+                   ADD
+                 </button>
                </div>
-             </div>
-
-             {/* Profile Pic URL */}
-             <div className="space-y-3 group">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Profile Image URL</label>
-               <div className="relative">
-                 <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
-                 <input 
-                   type="url" 
-                   name="profilePic"
-                   value={formData.profilePic}
-                   onChange={handleChange}
-                   placeholder="https://images.unsplash.com/your-photo..."
-                   className="w-full pl-16 pr-8 py-4 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
-                 />
+               {/* Skills list */}
+               <div className="flex flex-wrap gap-2 px-2 mt-2">
+                 {formData.skills.map((skill, index) => (
+                   <span key={index} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-xs flex items-center gap-2">
+                     {skill}
+                     <button type="button" onClick={() => removeSkill(skill)}><X size={14} /></button>
+                   </span>
+                 ))}
                </div>
              </div>
 
@@ -153,7 +250,7 @@ const EditProfile = () => {
                <button
                  type="submit"
                  disabled={loading}
-                 className="w-full py-5 bg-indigo-600 hover:bg-black text-white font-black text-lg rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-100 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50"
+                 className="w-full py-5 bg-indigo-600 hover:bg-black text-white font-black text-lg rounded-[2.5rem] flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-100 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50"
                >
                  {loading ? 'Saving...' : (
                    <>
@@ -163,9 +260,6 @@ const EditProfile = () => {
                  )}
                </button>
              </div>
-
-             {/* Background Shape */}
-             <div className="absolute right-0 bottom-0 w-24 h-24 bg-indigo-600/5 -z-10 rounded-tl-[100px]"></div>
           </form>
         </div>
       </div>
