@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -27,19 +25,21 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', {
-        email: formData.email,
-        password: formData.password
-      });
+      const result = await login(formData.email, formData.password);
 
-      // Save token & user to localStorage
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
 
-      alert('Login successful! 🎉');
-      navigate('/');
+      // role comes from the API response (returned in result.user)
+      if (result.user?.role === 'freelancer') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

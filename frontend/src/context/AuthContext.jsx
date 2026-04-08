@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     const checkUser = async () => {
       if (token) {
         try {
-          const response = await axios.get('http://localhost:5000/api/auth/me');
+          const response = await axios.get('/api/auth/me');
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -36,13 +36,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const response = await axios.post('/api/auth/login', { email, password });
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       setToken(token);
       setUser(user);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      return { success: true };
+      return { success: true, user }; // ✅ return user so Login.jsx can check role
     } catch (error) {
       return { 
         success: false, 
@@ -53,13 +53,13 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', userData);
+      const response = await axios.post('/api/auth/register', userData);
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       setToken(token);
       setUser(user);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      return { success: true };
+      return { success: true, user }; // ✅ return user so Register.jsx can check role
     } catch (error) {
       return { 
         success: false, 
@@ -83,8 +83,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAuthenticated: !!user,
-    isProvider: user?.role === 'provider',
-    isCustomer: user?.role === 'customer' || user?.role === 'client', // Backend uses 'client' by default
+    isProvider: user?.role === 'freelancer', 
+    isCustomer: user?.role === 'client', // Backend defaults to 'client' for customers
+    isAdmin: user?.role === 'admin'
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

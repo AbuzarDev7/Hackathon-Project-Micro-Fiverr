@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   // State variables hold data that might change over time
   // formData stores all the input fields from the registration form
   const [formData, setFormData] = useState({
@@ -52,27 +53,27 @@ const Register = () => {
     // If everything is okay, we start loading and send data to the backend
     setLoading(true);
     try {
-      // Send a POST request to our Node.js server to create the user
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
+      const result = await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role
       });
-
-      // If successful, the backend sends back a 'token' and 'user' data.
-      // We save these in localStorage so the user stays logged in even if they refresh the page.
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-
-      alert('Registration successful! 🎉');
-      // Send the user to the login page after they register
-      navigate('/login');
+ 
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+ 
+      // role comes directly from result.user returned by register()
+      if (result.user?.role === 'freelancer') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
-      // If the backend sends an error (like "Email already exists"), we show it here
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
-      // Whether it succeeded or failed, stop the loading animation
       setLoading(false);
     }
   };

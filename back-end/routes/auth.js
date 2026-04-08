@@ -110,7 +110,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
 // GET /api/auth/me (Protected Route)
 router.get("/me", authMiddleware, async (req, res) => {
   try {
@@ -119,6 +118,46 @@ router.get("/me", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Get user error:", error);
     res.status(500).json({ message: "Server error." });
+  }
+});
+
+
+// PUT /api/auth/profile (Protected Route)
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { name, avatar, phone, bio, skills, location } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (name) user.name = name;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (phone !== undefined) user.phone = phone;
+    if (bio !== undefined) user.bio = bio;
+    if (skills !== undefined) user.skills = Array.isArray(skills) ? skills : skills.split(",").map(s => s.trim());
+    if (location !== undefined) user.location = location;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully!",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        bio: user.bio,
+        skills: user.skills,
+        location: user.location
+      }
+    });
+  } catch (error) {
+    console.error("Profile update error:", error);
+    res.status(500).json({ message: "Server error during profile update." });
   }
 });
 

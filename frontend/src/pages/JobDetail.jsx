@@ -1,30 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import axios from 'axios';
+import { MapPin, Clock, Star, MessageSquare, Send, CheckCircle } from 'lucide-react';
 
 const JobDetail = () => {
   const { id } = useParams();
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock Job Data for UI Demonstration
-  const job = {
-    title: 'Expert AC Technician Needed for Full Service',
-    description: 'We are looking for a highly skilled AC technician to perform a complete service on 3 split units. The job includes filter cleaning, gas pressure check, and outdoor unit washing. We prefer someone who can bring their own professional cleaning kit and vacuum pump if needed.',
-    requirements: [
-      'Minimum 3 years of experience in AC maintenance',
-      'Must have own professional tools',
-      'Punctual and reliable',
-      'Knowledge of gas leak detection is a plus'
-    ],
-    budget: '5000',
-    location: 'Gulshan-e-Iqbal, Karachi',
-    category: 'Maintenance',
-    postedDate: 'Posted 2 hours ago',
-    client: {
-      name: 'Ahmed Khan',
-      rating: '4.8',
-      totalJobs: '12',
-      memberSince: 'Jan 2024'
-    }
-  };
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const res = await axios.get(`/api/jobs/${id}`);
+        setJob(res.data);
+      } catch (err) {
+        console.error("Error fetching job details", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJob();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
+        <div className="text-6xl mb-4">🚫</div>
+        <h2 className="text-2xl font-black text-slate-900 mb-2">Job Not Found</h2>
+        <p className="text-slate-500 mb-8">The job you're looking for doesn't exist or has been removed.</p>
+        <Link to="/" className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl">Back to Home</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 pt-32 pb-24">
@@ -41,36 +56,29 @@ const JobDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
           {/* Left Column: Job Info */}
           <div className="lg:col-span-2 space-y-12 animate-reveal [animation-delay:0.1s]">
+            {job.image && (
+              <div className="w-full h-96 rounded-[3rem] overflow-hidden shadow-2xl border border-white">
+                <img src={job.image} alt={job.title} className="w-full h-full object-cover" />
+              </div>
+            )}
             <div>
               <span className="inline-block px-4 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-black tracking-widest uppercase rounded-full border border-indigo-100 mb-6">
-                {job.category}
+                {job.category || 'General'}
               </span>
               <h1 className="text-4xl lg:text-6xl font-black text-slate-900 mb-6 leading-tight tracking-tighter">
                 {job.title}
               </h1>
               <p className="text-slate-400 font-bold flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                {job.postedDate}
+                <Clock size={18} className="text-slate-300" />
+                Posted on {new Date(job.createdAt).toLocaleDateString()}
               </p>
             </div>
 
             <div className="prose prose-slate max-w-none">
               <h3 className="text-2xl font-black text-slate-900 mb-6">Job Description</h3>
-              <p className="text-lg text-slate-600 font-medium leading-relaxed mb-8">
+              <p className="text-lg text-slate-600 font-medium leading-relaxed mb-8 whitespace-pre-wrap">
                 {job.description}
               </p>
-              
-              <h3 className="text-2xl font-black text-slate-900 mb-6 mt-12">Requirement & Skills</h3>
-              <ul className="space-y-4">
-                {job.requirements.map((req, i) => (
-                  <li key={i} className="flex items-start gap-4 text-slate-600 font-medium text-lg">
-                    <div className="mt-1 w-6 h-6 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-                       <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                    </div>
-                    {req}
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
 
@@ -82,16 +90,16 @@ const JobDetail = () => {
               
               <div className="mb-8">
                 <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Estimated Budget</p>
-                <p className="text-5xl font-black text-slate-900 tracking-tighter">RS {job.budget}</p>
+                <p className="text-5xl font-black text-slate-900 tracking-tighter">${job.budget}</p>
               </div>
 
               <div className="flex items-start gap-4 mb-10 pb-10 border-b border-slate-100">
                 <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
-                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                   <MapPin size={24} />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Location</p>
-                  <p className="text-lg font-bold text-slate-800 leading-tight">{job.location}</p>
+                   <p className="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Location</p>
+                   <p className="text-lg font-bold text-slate-800 leading-tight">{job.location}</p>
                 </div>
               </div>
 
@@ -110,23 +118,27 @@ const JobDetail = () => {
                <div className="relative z-10">
                  <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-8">About the Customer</h4>
                  <div className="flex items-center gap-5 mb-8">
-                   <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-2xl font-black">
-                     {job.client.name.charAt(0)}
+                   <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-2xl font-black overflow-hidden border border-white/10">
+                     {job.postedBy?.avatar ? (
+                       <img src={job.postedBy.avatar} alt={job.postedBy.name} className="w-full h-full object-cover" />
+                     ) : (
+                       job.postedBy?.name?.charAt(0)
+                     )}
                    </div>
                    <div>
-                     <p className="text-xl font-black">{job.client.name}</p>
-                     <p className="text-sm font-bold text-slate-400">Member since {job.client.memberSince}</p>
+                     <p className="text-xl font-black">{job.postedBy?.name}</p>
+                     <p className="text-sm font-bold text-slate-400">Trusted Member</p>
                    </div>
                  </div>
                  
                  <div className="grid grid-cols-2 gap-4">
                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
-                     <p className="text-2xl font-black mb-1">{job.client.rating}</p>
+                     <p className="text-2xl font-black mb-1">4.9</p>
                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Rating</p>
                    </div>
                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
-                     <p className="text-2xl font-black mb-1">{job.client.totalJobs}+</p>
-                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Jobs Posted</p>
+                     <p className="text-2xl font-black mb-1">Verified</p>
+                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</p>
                    </div>
                  </div>
                </div>
