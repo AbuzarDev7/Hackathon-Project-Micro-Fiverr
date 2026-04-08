@@ -1,7 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
-const authMiddleware = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -82,13 +82,13 @@ router.post("/login", async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "SomeThing Want Wrong" });
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
     // Compare password using bcrypt
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password." });
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
     // Generate token
@@ -111,7 +111,7 @@ router.post("/login", async (req, res) => {
 });
 
 // GET /api/auth/me (Protected Route)
-router.get("/me", authMiddleware, async (req, res) => {
+router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
     res.status(200).json({ user });

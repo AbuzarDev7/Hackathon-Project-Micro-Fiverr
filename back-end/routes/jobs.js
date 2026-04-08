@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Job = require("../models/job");
+<<<<<<< HEAD
 const authMiddleware = require("../middleware/authMiddleware");
 
 // GET /api/jobs - Get all open jobs
@@ -30,11 +31,47 @@ router.post("/", authMiddleware, async (req, res) => {
   try {
     // Removed role constraint so both clients and freelancers can post
     const { title, description, budget, location, category, image } = req.body;
+=======
+const { protect, authorize } = require("../middleware/authMiddleware");
+
+// @desc    Get all open jobs
+// @route   GET /api/jobs
+// @access  Public
+router.get("/", async (req, res) => {
+  try {
+    const jobs = await Job.find({ status: "open" }).populate("postedBy", "name email");
+    res.json(jobs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @desc    Get jobs posted by the logged-in client
+// @route   GET /api/jobs/client
+// @access  Private (Client only)
+router.get("/client", protect, authorize("client"), async (req, res) => {
+  try {
+    const jobs = await Job.find({ postedBy: req.user._id }).populate("applicants", "name email");
+    res.json(jobs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @desc    Create a new job
+// @route   POST /api/jobs
+// @access  Private (Client only)
+router.post("/", protect, authorize("client"), async (req, res) => {
+  const { title, description, budget, location } = req.body;
+  
+  try {
+>>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
     const job = await Job.create({
       title,
       description,
       budget,
       location,
+<<<<<<< HEAD
       category,
       image,
       postedBy: req.user._id,
@@ -127,6 +164,33 @@ router.patch("/:id/complete", authMiddleware, async (req, res) => {
     res.status(200).json({ message: "Job marked as completed!", job });
   } catch (error) {
     res.status(500).json({ message: "Error completing job", error: error.message });
+=======
+      postedBy: req.user._id
+    });
+    res.status(201).json(job);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// @desc    Apply to a job
+// @route   PUT /api/jobs/:id/apply
+// @access  Private (Freelancer only)
+router.put("/:id/apply", protect, authorize("freelancer"), async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+    
+    if (job.applicants.includes(req.user._id)) {
+      return res.status(400).json({ message: "Already applied" });
+    }
+    
+    job.applicants.push(req.user._id);
+    await job.save();
+    res.json({ success: true, message: "Applied successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+>>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
   }
 });
 

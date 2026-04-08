@@ -11,10 +11,18 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
+<<<<<<< HEAD
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
         secure: false,
+=======
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+>>>>>>> a69bbeba641c791e8fdb1c8f1465c492039d45dc
       }
     }
   }
 })
+
