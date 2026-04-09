@@ -11,8 +11,15 @@ import {
   Zap,
   Tag,
   Layers,
-  Sparkles
+  Sparkles,
+  ArrowRight,
+  SlidersHorizontal
 } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
+import { Input } from '../../components/ui/Input';
+import { Badge } from '../../components/ui/Badge';
+import { cn } from '../../utils/cn';
 
 const ServiceListing = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,7 +28,6 @@ const ServiceListing = () => {
   const [filters, setFilters] = useState({
     category: 'All',
     location: '',
-    priceRange: 10000
   });
 
   const categories = ['All', 'Plumbing', 'Electrical', 'Tutoring', 'Cleaning', 'Painting', 'Other', 'Technical', 'Home Service'];
@@ -43,187 +49,150 @@ const ServiceListing = () => {
   const filteredServices = services.filter((service) => {
     const matchesSearch =
       service.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.providerId?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filters.category === 'All' || service.category === filters.category;
     const matchesLocation =
       filters.location === '' || service.location?.toLowerCase().includes(filters.location.toLowerCase());
-    const matchesPrice = (service.price || 0) <= filters.priceRange;
-    return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
+    return matchesSearch && matchesCategory && matchesLocation;
   });
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-8 font-['Outfit'] space-y-12 animate-in fade-in duration-700 pb-20">
-      {/* 🚀 PREMIUM HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
-             <Sparkles size={14} />
-             Discover Excellence
-          </div>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none">Marketplace Gigs</h1>
-          <p className="text-slate-500 font-medium text-lg">Hire top-rated freelancers for your next project.</p>
-        </div>
-        <div className="text-right">
-           <span className="text-3xl font-black text-indigo-600">{filteredServices.length}</span>
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Services Available</p>
-        </div>
-      </div>
-
-      {/* 🔍 DYNAMIC FILTERS */}
-      <div className="bg-white p-8 md:p-10 rounded-[3.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 flex flex-col lg:flex-row gap-8 items-end">
-        <div className="flex-grow w-full space-y-3 group">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 block group-focus-within:text-indigo-600 transition-colors">What service are you looking for?</label>
-          <div className="relative">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500" size={20} />
-            <input 
-              type="text"
-              placeholder="Search by title, skill or provider..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[2rem] outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-slate-800 text-lg shadow-inner"
-            />
-          </div>
-        </div>
-
-        <div className="w-full lg:w-56 space-y-3 group">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 block">Location</label>
-          <div className="relative">
-             <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-             <input 
-               type="text"
-               placeholder="City name..."
-               value={filters.location}
-               onChange={(e) => setFilters({...filters, location: e.target.value})}
-               className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-transparent rounded-[2rem] outline-none focus:bg-white focus:border-indigo-400 transition-all font-bold text-slate-800 shadow-inner"
-             />
-          </div>
-        </div>
-
-        <div className="w-full lg:w-56 space-y-3 group">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 block">Category</label>
-          <div className="relative">
-            <Layers className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={18} />
-            <select 
-              className="w-full pl-14 pr-8 py-5 bg-slate-50 border border-transparent rounded-[2rem] outline-none focus:bg-white focus:border-indigo-400 transition-all font-bold text-slate-800 appearance-none cursor-pointer shadow-inner"
-              value={filters.category}
-              onChange={(e) => setFilters({...filters, category: e.target.value})}
-            >
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* 💼 SERVICES GRID */}
-      {loading ? (
-        <div className="py-32 flex flex-col items-center justify-center gap-6">
-           <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-           <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Curating Best Gigs for you...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredServices.map((service) => (
-            <div 
-              key={service._id}
-              className="group bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-200/40 hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col h-full"
-            >
-              {/* Image Section */}
-              <div className="relative h-52 overflow-hidden bg-slate-100">
-                 {service.image ? (
-                   <img src={service.image} alt={service.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                 ) : (
-                   <div className="w-full h-full flex items-center justify-center text-slate-300 italic font-black">No Preview</div>
-                 )}
-                 <div className="absolute top-5 left-5 px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-indigo-600 font-black text-[10px] uppercase tracking-widest shadow-sm border border-white/50">
-                   {service.category || 'General'}
-                 </div>
-              </div>
-
-              <div className="p-8 flex flex-col flex-1 justify-between gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Star size={16} fill="currentColor" className="text-amber-400" />
-                      <span className="text-sm font-black text-slate-900">5.0</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">New Seller</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
-                      <MapPin size={12} className="text-indigo-400" />
-                      {service.location || 'Remote'}
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-2 italic">
-                    I will {service.title}
-                  </h3>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                     <div className="flex flex-col">
-                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] leading-none mb-1">Starting At</span>
-                        <div className="flex items-baseline gap-1">
-                           <span className="text-xs font-black text-indigo-600 mb-0.5">PKR</span>
-                           <span className="text-2xl font-black text-slate-900 italic tracking-tighter">{service.price}</span>
-                        </div>
-                     </div>
-                     <Link 
-                       to={`/services/${service._id}`}
-                       className="w-12 h-12 bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white rounded-2xl flex items-center justify-center text-slate-400 transition-all hover:scale-110 shadow-sm"
-                     >
-                        <ChevronRight size={20} />
-                     </Link>
-                  </div>
-
-                  <div className="flex items-center gap-4 pt-4 border-t border-slate-50">
-                     <div className="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-lg">
-                        {service.providerId?.name?.charAt(0) || 'P'}
-                     </div>
-                     <div className="flex-1 overflow-hidden">
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mb-0.5 leading-none">Pro Developer</p>
-                        <p className="text-sm font-black text-slate-800 truncate">{service.providerId?.name || 'Professional'}</p>
-                     </div>
-                      <Link 
-                        to="/radar"
-                        state={{ 
-                          focusFreelancer: service.providerId?._id,
-                          lat: service.providerId?.lat,
-                          lng: service.providerId?.long
-                        }}
-                        className="w-10 h-10 bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95 border border-indigo-100"
-                        title="View on Map"
-                      >
-                        <MapPin size={16} />
-                      </Link>
-                      <Link 
-                        to="/chat"
-                        state={{
-                          introProvider: service.providerId,
-                          introMessage: `Hi! I am interested in your gig: "${service.title}"`
-                        }}
-                        className="w-10 h-10 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95 border border-emerald-100"
-                        title="Chat with Seller"
-                      >
-                        <MessageSquare size={16} />
-                      </Link>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen bg-white font-['Inter']">
+      
+      {/* 🧭 FILTER HEADERBAR */}
+      <div className="sticky top-[72px] z-40 bg-white/90 backdrop-blur-xl border-b border-slate-100 py-6 px-4 lg:px-12 shadow-sm">
+         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 items-center">
+            <div className="flex-grow w-full relative group">
+               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
+               <Input 
+                 placeholder="Search Gigs (e.g. plumber, repair)..." 
+                 value={searchTerm}
+                 onChange={e => setSearchTerm(e.target.value)}
+                 className="h-14 pl-14 bg-slate-50 border-none shadow-inner rounded-2xl font-bold text-slate-700 focus-visible:ring-2 focus-visible:ring-indigo-100"
+               />
             </div>
-          ))}
-        </div>
-      )}
+            
+            <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+               <div className="relative group min-w-[200px]">
+                  <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <Input 
+                    placeholder="Location Filter..." 
+                    value={filters.location}
+                    onChange={e => setFilters({...filters, location: e.target.value})}
+                    className="h-14 pl-12 bg-slate-50 border-none rounded-2xl font-bold text-xs"
+                  />
+               </div>
+               
+               <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  {categories.map(cat => (
+                    <Badge 
+                      key={cat} 
+                      onClick={() => setFilters({...filters, category: cat})}
+                      variant={filters.category === cat ? "default" : "outline"}
+                      className={cn(
+                        "cursor-pointer px-5 py-2 whitespace-nowrap text-[9px] uppercase font-black tracking-widest transition-all",
+                        filters.category === cat ? "bg-indigo-600 border-indigo-600 shadow-lg shadow-indigo-100" : "bg-white border-slate-200 text-slate-400 hover:border-indigo-400"
+                      )}
+                    >
+                       {cat}
+                    </Badge>
+                  ))}
+               </div>
+            </div>
+         </div>
+      </div>
 
-      {!loading && filteredServices.length === 0 && (
-        <div className="py-32 text-center bg-white rounded-[4rem] border-4 border-dashed border-slate-100">
-          <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 text-slate-200">
-             <Search size={48} />
-          </div>
-          <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">No services found</h3>
-          <p className="text-slate-500 font-medium max-w-sm mx-auto">Try adjusting your filters or search terms to find what you're looking for.</p>
-        </div>
-      )}
+      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-20 space-y-12">
+         <div className="flex items-end justify-between px-4">
+            <div className="space-y-4">
+               <h1 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-none italic">Marketplace <span className="text-indigo-600 underline decoration-indigo-200">Gigs</span></h1>
+               <p className="text-slate-500 font-medium text-lg leading-relaxed">Find verified local talent with elite skills.</p>
+            </div>
+            <div className="text-right">
+               <span className="text-4xl font-black text-indigo-600 tracking-tighter italic">{filteredServices.length}</span>
+               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Gigs Found</p>
+            </div>
+         </div>
+
+         {loading ? (
+            <div className="py-40 flex flex-col items-center justify-center gap-6">
+               <div className="w-14 h-14 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+               <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px] animate-pulse">Scanning the Neighborhood...</p>
+            </div>
+         ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+               {filteredServices.map(service => (
+                  <Card key={service._id} className="group border-none shadow-none bg-transparent hover:-translate-y-3 transition-all duration-700">
+                     <CardHeader className="p-0 relative rounded-[2.5rem] overflow-hidden">
+                        <img 
+                          src={service.image || `https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&q=80&w=1000`} 
+                          className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-[1.5s]" 
+                        />
+                        <div className="absolute top-5 left-5">
+                           <Badge className="bg-white/90 backdrop-blur-md text-indigo-600 border-none px-4 py-1.5 font-black uppercase text-[10px] tracking-widest italic">{service.category}</Badge>
+                        </div>
+                        <div className="absolute bottom-5 right-5 flex gap-2">
+                           <Link 
+                             to="/radar" 
+                             state={{ focusFreelancer: service.providerId?._id }}
+                             className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-xl hover:bg-black transition-colors"
+                             title="View on Map"
+                           >
+                              <MapPin size={16} />
+                           </Link>
+                           <Link 
+                              to="/chat"
+                              state={{ introProvider: service.providerId, introMessage: `Hi! I am interested in your gig: "${service.title}"` }}
+                              className="w-10 h-10 bg-white/90 backdrop-blur-md text-slate-900 rounded-xl flex items-center justify-center shadow-lg hover:bg-emerald-500 hover:text-white transition-all"
+                           >
+                              <MessageSquare size={16} />
+                           </Link>
+                        </div>
+                     </CardHeader>
+                     
+                     <CardContent className="px-2 pt-8 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-1.5 text-amber-500">
+                              <Star size={14} fill="currentColor" />
+                              <span className="text-sm font-black text-slate-800">5.0</span>
+                           </div>
+                           <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-none text-[8px] tracking-[0.2em] px-3">NEW SELLER</Badge>
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors italic line-clamp-2 min-h-[3rem]">
+                           I will {service.title}
+                        </h3>
+                     </CardContent>
+
+                     <CardFooter className="px-2 pt-6 flex items-center justify-between border-t border-slate-100">
+                        <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-[10px] border border-indigo-100 overflow-hidden shadow-sm">
+                              {service.providerId?.name?.charAt(0) || 'P'}
+                           </div>
+                           <div className="flex flex-col">
+                              <span className="text-[8px] font-black text-slate-400 tracking-widest uppercase">Expert</span>
+                              <span className="text-sm font-black text-slate-800 tracking-tight">{service.providerId?.name || 'Professional'}</span>
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <span className="text-[8px] font-black text-slate-400 tracking-[0.2em] uppercase leading-none block mb-0.5">Starting At</span>
+                           <span className="text-xl font-black text-slate-900 italic tracking-tighter">Rs. {service.price}</span>
+                        </div>
+                     </CardFooter>
+
+                     <div className="px-2 pt-4 pb-2 grid grid-cols-2 gap-2">
+                        <Button asChild variant="outline" className="h-14 rounded-2xl border-slate-200 hover:bg-slate-50 font-black text-[10px] uppercase tracking-widest transition-all">
+                           <Link to={`/services/${service._id}`}>Details</Link>
+                        </Button>
+                        <Button asChild className="h-14 rounded-2xl bg-indigo-600 hover:bg-black font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 transition-all">
+                           <Link to={`/checkout/${service._id}`}>Buy Now</Link>
+                        </Button>
+                     </div>
+                  </Card>
+               ))}
+            </div>
+         )}
+      </div>
+
     </div>
   );
 };

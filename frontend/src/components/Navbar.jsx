@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Sparkles, Menu, X, LogOut, MessageSquare, LayoutDashboard, Globe, Search } from 'lucide-react';
+import { Button } from './ui/Button';
+import { cn } from '../utils/cn';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -9,19 +12,13 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Handle scroll for sticky glass effect
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location]);
+  useEffect(() => setIsMobileMenuOpen(false), [location]);
 
   const handleLogout = () => {
     logout();
@@ -29,109 +26,115 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white/80 backdrop-blur-lg border-b border-slate-200 py-3 shadow-sm' : 'bg-transparent py-5'
-    }`}>
-      <div className="container mx-auto px-4 md:px-8 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform duration-300 font-bold text-xl">
-            M
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 z-[5000] transition-all duration-500 font-['Inter']",
+      isScrolled ? "bg-white/80 backdrop-blur-xl border-b border-indigo-50 py-4" : "bg-transparent py-6"
+    )}>
+      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        
+        {/* LOGO */}
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-2xl shadow-indigo-200 group-hover:rotate-12 transition-transform duration-500">
+            <Sparkles size={24} />
           </div>
-          <span className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
-            Micro<span className="text-indigo-600">Fiverr</span>
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl font-black text-slate-900 tracking-tighter leading-none italic">Micro Fiverr.</span>
+            <span className="text-[8px] font-black text-indigo-600 uppercase tracking-[0.3em] mt-1 ml-0.5">Elite Marketplace</span>
+          </div>
         </Link>
 
-        {/* Desktop Links */}
-        <div className="hidden lg:flex items-center gap-8">
-          {user?.role !== 'client' && (
-            <Link to="/jobs" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Find Jobs</Link>
-          )}
-          <Link to="/" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Home</Link>
-          <Link to="/services" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Services</Link>
-          {isAuthenticated && (
-            <>
-              {user?.role === 'freelancer' && (
-                <Link to="/dashboard" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Dashboard</Link>
-              )}
-              <Link to="/chat" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Messages</Link>
-            </>
-          )}
+        {/* DESKTOP LINKS */}
+        <div className="hidden lg:flex items-center gap-10">
+          <Link to="/" className={cn("text-xs font-black uppercase tracking-widest transition-colors", location.pathname === '/' ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600")}>Home</Link>
+          <Link to="/services" className={cn("text-xs font-black uppercase tracking-widest transition-colors", location.pathname === '/services' ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600")}>Marketplace</Link>
+          <Link to="/radar" className={cn("text-xs font-black uppercase tracking-widest transition-colors", location.pathname === '/radar' ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600")}>Live Radar</Link>
         </div>
 
-        {/* Auth Actions / Profile */}
-        <div className="hidden lg:flex items-center gap-4">
+        {/* AUTH ACTIONS */}
+        <div className="hidden lg:flex items-center gap-6">
           {!isAuthenticated ? (
             <>
-              <Link to="/login" className="text-sm font-bold text-slate-700 hover:text-indigo-600 px-4 transition-colors">
-                Sign In
-              </Link>
-              <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-indigo-100 transition-all hover:-translate-y-0.5 active:translate-y-0">
-                Join Community
-              </Link>
+              <Link to="/login" className="text-xs font-black uppercase tracking-widest text-slate-600 hover:text-indigo-600 transition-colors">Sign In</Link>
+              <Button asChild className="rounded-2xl px-10 h-14 bg-indigo-600 hover:bg-black shadow-xl shadow-indigo-100 font-black text-[10px] uppercase tracking-widest">
+                <Link to="/register">Join Community</Link>
+              </Button>
             </>
           ) : (
-            <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
+            <div className="flex items-center gap-6 pl-6 border-l border-slate-100">
               <div className="text-right">
-                <p className="text-sm font-bold text-slate-900 leading-none mb-1">{user?.name}</p>
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">{user?.role}</p>
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{user?.role}</p>
+                <p className="text-sm font-black text-slate-900 leading-none italic">{user?.name}</p>
               </div>
-              <button 
-                onClick={handleLogout}
-                className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all"
-                title="Log out"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              </button>
+              
+              <div className="flex items-center gap-2">
+                 <Link to="/chat" className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-inner">
+                    <MessageSquare size={18} />
+                 </Link>
+                 <Link to="/dashboard" className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-inner">
+                    <LayoutDashboard size={18} />
+                 </Link>
+                 <button 
+                   onClick={handleLogout}
+                   className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-400 hover:bg-rose-600 hover:text-white transition-all shadow-inner"
+                 >
+                    <LogOut size={18} />
+                 </button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* MOBILE TRIGGER */}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="lg:hidden w-10 h-10 flex items-center justify-center text-slate-900 focus:outline-none"
+          className="lg:hidden w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-900 shadow-inner"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {isMobileMenuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* MOBILE MENU */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-2xl py-6 px-4 flex flex-col gap-4 animate-reveal">
-          <Link to="/" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Home</Link>
-          {user?.role !== 'client' && (
-            <Link to="/jobs" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Find Jobs</Link>
-          )}
-          <Link to="/services" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Browse Services</Link>
-          {isAuthenticated && (
-            <>
-              {user?.role === 'freelancer' && (
-                <Link to="/dashboard" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Dashboard</Link>
-              )}
-              <Link to="/chat" className="text-lg font-bold text-slate-900 py-2 border-b border-slate-50">Chat Messages</Link>
-            </>
-          )}
-          {!isAuthenticated ? (
-            <div className="flex flex-col gap-3 mt-4">
-              <Link to="/login" className="w-full py-4 text-center font-bold text-slate-900 bg-slate-100 rounded-2xl">Log In</Link>
-              <Link to="/register" className="w-full py-4 text-center font-bold text-white bg-indigo-600 rounded-2xl">Get Started Free</Link>
-            </div>
-          ) : (
-            <button 
-              onClick={handleLogout}
-              className="w-full mt-4 py-4 text-center font-bold text-red-600 bg-red-50 rounded-2xl"
-            >
-              Sign Out
-            </button>
-          )}
+        <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-50 shadow-2xl py-8 px-6 space-y-8 animate-in slide-in-from-top-5 duration-500">
+           <div className="flex flex-col gap-6">
+              <Link to="/" className="text-2xl font-black italic text-slate-800">Home Feed</Link>
+              <Link to="/services" className="text-2xl font-black italic text-slate-800">Global Gigs</Link>
+              <Link to="/radar" className="text-2xl font-black italic text-slate-800">Live Radar tracking</Link>
+           </div>
+           
+           {!isAuthenticated ? (
+             <div className="flex flex-col gap-4">
+                <Button asChild variant="outline" className="h-16 rounded-2xl font-black text-xs uppercase tracking-widest">
+                   <Link to="/login">Account Login</Link>
+                </Button>
+                <Button asChild className="h-16 rounded-2xl bg-indigo-600 font-black text-xs uppercase tracking-widest">
+                   <Link to="/register">Create Elite Account</Link>
+                </Button>
+             </div>
+           ) : (
+             <div className="space-y-6">
+                <div className="p-6 bg-slate-50 rounded-[2rem] flex items-center justify-between">
+                   <div>
+                      <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">{user?.role}</p>
+                      <h3 className="text-xl font-black italic text-slate-900">{user?.name}</h3>
+                   </div>
+                   <div className="w-14 h-14 bg-white rounded-2xl border border-white shadow-xl flex items-center justify-center text-indigo-600 font-black">
+                      {user?.name?.charAt(0)}
+                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <Button asChild variant="outline" className="h-16 rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                      <Link to="/dashboard">Dashboard</Link>
+                   </Button>
+                   <Button asChild variant="outline" className="h-16 rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                      <Link to="/chat">Messages</Link>
+                   </Button>
+                </div>
+                <Button onClick={handleLogout} className="w-full h-16 bg-rose-600 hover:bg-black rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                   Sign Out Securely
+                </Button>
+             </div>
+           )}
         </div>
       )}
     </nav>

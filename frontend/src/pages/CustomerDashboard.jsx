@@ -16,6 +16,7 @@ const CustomerDashboard = () => {
   const [activeView, setActiveView] = useState('overview');
   const [data, setData] = useState({
     userJobs: [],
+    totalSpent: 0,
     hiredProviders: [],
   });
   const [loading, setLoading] = useState(true);
@@ -26,12 +27,16 @@ const CustomerDashboard = () => {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
         
-        const [userJobsRes] = await Promise.all([
+        const [userJobsRes, paymentsRes] = await Promise.all([
           axios.get('/api/jobs/user', config),
+          axios.get('/api/payment/history', config),
         ]);
+
+        const spent = paymentsRes.data.reduce((acc, curr) => acc + curr.amount, 0);
 
         setData({
           userJobs: userJobsRes.data,
+          totalSpent: spent,
           hiredProviders: [], 
         });
       } catch (err) {
@@ -47,7 +52,7 @@ const CustomerDashboard = () => {
     switch (activeView) {
       case 'overview': return <CustomerOverview stats={{ 
         posted: data.userJobs.length, 
-        hired: 5, 
+        spent: data.totalSpent, 
         active: data.userJobs.filter(j => j.status === 'in-progress').length, 
         messages: 12 
       }} />;

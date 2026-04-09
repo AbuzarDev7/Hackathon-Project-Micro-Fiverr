@@ -152,6 +152,10 @@ app.use("/api/chat", require("./routes/chat"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/bookings", require("./routes/bookings"));
 app.use("/api/location", require("./routes/location"));
+app.use("/api/payment", require("./routes/payment"));
+
+// Inject socketio into app for routes
+app.set("socketio", io);
 
 // Simple health check route
 app.get("/", (req, res) => {

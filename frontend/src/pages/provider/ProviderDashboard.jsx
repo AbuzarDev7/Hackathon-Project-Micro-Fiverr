@@ -59,11 +59,23 @@ const ProviderDashboard = () => {
     }
   }, [user]);
 
+  const [balance, setBalance] = useState(user?.balance || 0);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    socket.on("payment_received", (data) => {
+      setBalance(prev => prev + Number(data.amount));
+      setNotifications(prev => [data, ...prev]);
+      // Optional: Sound effect or visual toast
+    });
+    return () => socket.off("payment_received");
+  }, []);
+
   const stats = [
     { label: 'Active Services', value: vendorStats.servicesCount, icon: Briefcase, color: 'bg-indigo-500/10 text-indigo-500' },
     { label: 'Current Hires', value: '3', icon: Users, color: 'bg-emerald-500/10 text-emerald-500' },
     { label: 'Avg. Rating', value: vendorStats.rating, icon: Star, color: 'bg-amber-500/10 text-amber-500' },
-    { label: 'Total Sales', value: 'Rs. 45,000', icon: TrendingUp, color: 'bg-purple-500/10 text-purple-500' },
+    { label: 'Account Balance', value: `Rs. ${balance.toLocaleString()}`, icon: TrendingUp, color: 'bg-purple-500/10 text-purple-500' },
   ];
 
   return (
@@ -157,6 +169,24 @@ const ProviderDashboard = () => {
              </Link>
           </div>
           
+          {/* 🔔 LIVE PAYMENT NOTIFICATIONS */}
+          <div className="space-y-4 mb-10">
+             {notifications.map((n, i) => (
+                <div key={i} className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl flex items-center justify-between animate-in slide-in-from-right-5">
+                   <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-emerald-500/20">
+                         <Zap size={24} />
+                      </div>
+                      <div>
+                         <h4 className="text-white font-black text-sm">Payment Received!</h4>
+                         <p className="text-emerald-400 text-xs font-medium">You received Rs. {n.amount} from {n.clientName}</p>
+                      </div>
+                   </div>
+                   <Badge className="bg-emerald-500 text-white border-none py-1.5 px-4 font-black text-[9px] tracking-widest uppercase">Verified</Badge>
+                </div>
+             ))}
+          </div>
+
           <div className="bg-slate-900 border border-slate-800 rounded-[3rem] overflow-hidden">
             <div className="p-10 text-center space-y-4">
                <div className="w-20 h-20 bg-slate-800 rounded-3xl flex items-center justify-center mx-auto text-slate-600 mb-2">

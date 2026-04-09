@@ -2,10 +2,10 @@ import React from 'react';
 import { Briefcase, UserCheck, Clock, MessageSquare, PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const CustomerOverview = ({ stats = { posted: 8, hired: 5, active: 2, messages: 12 } }) => {
+const CustomerOverview = ({ stats = { posted: 0, spent: 0, active: 0, messages: 0 } }) => {
   const cards = [
     { label: 'Total Posted Jobs', value: stats.posted, icon: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Hired Providers', value: stats.hired, icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Total Spent', value: `Rs. ${stats.spent.toLocaleString()}`, icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Active Projects', value: stats.active, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Unread Messages', value: stats.messages, icon: MessageSquare, color: 'text-amber-500', bg: 'bg-amber-50' },
   ];

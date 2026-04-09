@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   MapPin, 
@@ -15,11 +16,25 @@ import {
   BookOpen,
   Brush,
   Wind,
-  Layers
+  Layers,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Star,
+  Globe,
+  Trophy,
+  ZapOff,
+  Clock,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { getDistance } from '../utils/geo';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
+import { cn } from '../utils/cn';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
@@ -27,24 +42,8 @@ const Home = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [location, setLocation] = useState('');
-  const [priceRange, setPriceRange] = useState(50000);
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
-  const [userLocation, setUserLocation] = useState(null);
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => console.error("Error getting location:", error)
-      );
-    }
-  }, []);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -60,330 +59,253 @@ const Home = () => {
     fetchServices();
   }, []);
 
-  const categoriesList = ['All', 'Home Service', 'Technical', 'Education', 'Events', 'Design', 'Commercial', 'Other'];
-
-  const steps = [
-    { 
-      title: 'Post a Job', 
-      desc: 'Describe your task, set your budget, and post it for local pros to see.', 
-      icon: ClipboardList, 
-      color: 'bg-indigo-600' 
-    },
-    { 
-      title: 'Get Applicants', 
-      desc: 'Skilled providers in your area will apply for your job instantly.', 
-      icon: Users, 
-      color: 'bg-indigo-600' 
-    },
-    { 
-      title: 'Hire & Done', 
-      desc: 'Choose the best pro, chat with them, and get your work finished.', 
-      icon: CheckCircle, 
-      color: 'bg-indigo-600' 
-    },
+  const stats = [
+    { label: 'Verified Pros', value: '5,000+', icon: Users, color: 'text-indigo-600' },
+    { label: 'Monthly Gigs', value: '12,000+', icon: Briefcase, color: 'text-emerald-600' },
+    { label: 'Rating Avg', value: '4.9/5', icon: Star, color: 'text-amber-500' },
+    { label: 'Time Saved', value: '250k hrs', icon: Clock, color: 'text-purple-600' },
   ];
 
-  const categoryIcons = [
-    { name: 'Plumbing', icon: Droplets, color: 'bg-blue-50 text-blue-600' },
-    { name: 'Electrical', icon: Zap, color: 'bg-amber-50 text-amber-600' },
-    { name: 'Tutoring', icon: BookOpen, color: 'bg-emerald-50 text-emerald-600' },
-    { name: 'Cleaning', icon: Wind, color: 'bg-cyan-50 text-cyan-600' },
-    { name: 'Painting', icon: Brush, color: 'bg-rose-50 text-rose-600' },
-    { name: 'Other', icon: Layers, color: 'bg-slate-50 text-slate-600' },
-  ];
+  const categoriesList = ['All', 'Home Service', 'Technical', 'Education', 'Events', 'Design'];
 
   const filteredServices = services.filter((service) => {
-    const matchesSearch =
-      service.title?.toLowerCase().includes(search.toLowerCase()) ||
-      service.location?.toLowerCase().includes(search.toLowerCase()) ||
-      service.providerId?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = service.title?.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = category === 'All' || service.category === category;
-    const matchesLocation =
-      location === '' || service.location?.toLowerCase().includes(location.toLowerCase());
-    const matchesPrice = !service.price || service.price <= priceRange;
-    return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
+    return matchesSearch && matchesCategory;
   });
 
-  const handleHireClick = (serviceId) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    navigate(`/services/${serviceId}`);
-  };
-
   return (
-    <div className="min-h-screen bg-white font-['Inter']">
+    <div className="min-h-screen bg-white font-['Inter'] selection:bg-indigo-100 selection:text-indigo-900">
       
-      {/* 🚀 HERO SECTION */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-slate-50">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-indigo-600/5 -skew-x-12 translate-x-1/4"></div>
-        <div className="container mx-auto px-6 relative z-10 text-center lg:text-left grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="max-w-3xl mx-auto lg:mx-0">
-            <h1 className="text-5xl lg:text-7xl font-black text-slate-900 mb-6 leading-tight tracking-tight font-['Outfit']">
-              Find Trusted <span className="text-indigo-600 underline decoration-indigo-200">Local Services</span> Near You
-            </h1>
-            <p className="text-xl text-slate-600 mb-10 leading-relaxed font-medium lg:pr-20">
-              Connect with top-rated plumbers, electricians, tutors and more in your neighborhood. Get things done fast.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-5 justify-center lg:justify-start">
-              <Link 
-                to="/dashboard" 
-                className="w-full sm:w-auto bg-indigo-600 hover:bg-black text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 group hover:-translate-y-1 shadow-xl shadow-indigo-100"
-              >
-                <PlusCircle size={22} className="group-hover:rotate-90 transition-transform" />
-                Get Started
-              </Link>
-              <a 
-                href="#marketplace" 
-                className="w-full sm:w-auto bg-white border-2 border-slate-200 hover:border-indigo-600 text-slate-900 px-10 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
-              >
-                <Search size={22} />
-                Browse Services
-              </a>
-            </div>
-          </div>
-          
-          <div className="hidden lg:block relative">
-             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white">
-                <img 
-                  src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=1469" 
-                  alt="Professional Service" 
-                  className="w-full aspect-[4/5] object-cover"
-                />
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Search & Filter Bar ── */}
-      <div id="marketplace" className="bg-white border-b border-slate-100 sticky top-[72px] z-30 py-4 px-4 lg:px-12 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-4 items-center">
-          
-          {/* Search */}
-          <div className="flex-grow w-full flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl focus-within:ring-2 ring-indigo-100 transition-all">
-            <Search size={18} className="text-indigo-500 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search services, categories, or freelancers..."
-              className="bg-transparent border-none outline-none text-sm font-semibold w-full text-slate-700 placeholder:text-slate-400"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl min-w-[140px]">
-              <MapPin size={16} className="text-indigo-400 shrink-0" />
-              <input
-                type="text"
-                placeholder="Location..."
-                className="bg-transparent border-none outline-none text-xs font-bold w-full text-slate-700"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
-            </div>
-
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl min-w-[180px]">
-              <DollarSign size={16} className="text-emerald-500 shrink-0" />
-              <div className="flex-grow flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Max: ${priceRange}</span>
-                <input
-                  type="range"
-                  min="10"
-                  max="10000"
-                  step="100"
-                  className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(Number(e.target.value))}
-                />
-              </div>
-            </div>
-
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl text-xs font-bold text-slate-600 outline-none cursor-pointer hover:bg-slate-100 transition-all"
-            >
-              {categoriesList.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Service Cards ── */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-12 py-16">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Available Services</h2>
-          <p className="text-slate-500 text-sm font-semibold">
-            <span className="font-black text-slate-900">{filteredServices.length}</span> results
-          </p>
-        </div>
-
-        {loadingServices ? (
-           <div className="flex flex-col items-center justify-center py-20 gap-4">
-             <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-             <p className="text-slate-500 font-bold">Loading services...</p>
-           </div>
-        ) : filteredServices.length === 0 ? (
-          <div className="py-32 text-center bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
-            <div className="text-6xl mb-6">🔍</div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2">No matching services</h3>
-            <p className="text-slate-500">Try adjusting your filters or search terms.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {filteredServices.map((service) => (
-              <div
-                key={service._id}
-                className="group bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:border-indigo-100 transition-all duration-500 flex flex-col"
-              >
-                {/* Service Image */}
-                <div className="h-56 w-full bg-slate-100 relative overflow-hidden">
-                  {service.image ? (
-                    <img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300">
-                      <Layers size={64} strokeWidth={1} />
-                    </div>
-                  )}
-                  <div className="absolute top-5 left-5 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-[10px] font-black text-indigo-600 uppercase tracking-widest border border-slate-100 shadow-sm z-10">
-                    {service.category || 'General'}
-                  </div>
-                  <div className="absolute bottom-5 right-5 bg-indigo-600 px-4 py-1.5 rounded-full text-sm font-black text-white shadow-lg">
-                    Rs. {service.price?.toLocaleString()}
-                  </div>
-                </div>
-
-                <div className="p-8 flex flex-col flex-grow">
-                  <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors leading-tight">
-                    {service.title}
-                  </h3>
-                  <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6 line-clamp-3">
-                    {service.description}
-                  </p>
-
-                  <div className="mt-auto">
-                    <div className="flex items-center gap-3 mb-6 pt-6 border-t border-slate-50">
-                      <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold border border-indigo-100 overflow-hidden">
-                         {service.providerId?.avatar ? (
-                          <img src={service.providerId.avatar} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          service.providerId?.name?.charAt(0) || 'U'
-                        )}
-                      </div>
-                      <div className="flex-grow">
-                        <p className="text-sm font-black text-slate-800">{service.providerId?.name || 'Unknown'}</p>
-                        <div className="flex items-center gap-1.5 text-slate-400 px-0.5">
-                          <MapPin size={12} className="text-indigo-300" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">
-                            {service.location} 
-                            {userLocation && service.providerId?.lat && (
-                              <span className="text-indigo-600 ml-1">
-                                ({getDistance(userLocation.lat, userLocation.lng, service.providerId.lat, service.providerId.long)} km away)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleHireClick(service._id)}
-                      className="w-full py-4 bg-slate-900 hover:bg-indigo-600 text-white font-black rounded-2xl transition-all duration-300 shadow-lg active:scale-95"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 📋 HOW IT WORKS */}
-      <section className="py-24 lg:py-32 bg-slate-50">
-        <div className="container mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-6 tracking-tight">How it Works</h2>
-            <p className="text-lg text-slate-500 font-medium leading-relaxed">Getting your local tasks done is as easy as 1-2-3.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center relative">
-            <div className="hidden md:block absolute top-[60px] left-1/4 right-1/4 h-0.5 bg-slate-200 -z-0"></div>
+      {/* 🚀 ELITE HERO SECTION */}
+      <section className="relative pt-32 pb-24 lg:pt-52 lg:pb-48 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent_50%)]"></div>
+        <div className="absolute top-1/2 left-0 w-96 h-96 bg-purple-500/5 blur-[120px] rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+        
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-12">
             
-            {steps.map((step, i) => (
-              <div key={i} className="group flex flex-col items-center relative z-10">
-                <div className="w-24 h-24 bg-white border-4 border-slate-100 rounded-[2.5rem] shadow-xl shadow-indigo-100/20 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 relative">
-                   <div className={`w-16 h-16 ${step.color} rounded-2xl flex items-center justify-center text-white shadow-lg`}>
-                      <step.icon size={30} />
-                   </div>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4">{step.title}</h3>
-                <p className="text-slate-500 font-medium leading-relaxed px-6">
-                  {step.desc}
-                </p>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="space-y-8"
+            >
+              <Badge variant="secondary" className="px-6 py-2 border-indigo-100 bg-indigo-50/50 text-indigo-700 text-[10px] uppercase font-black tracking-[0.3em] shadow-sm animate-pulse">
+                <Sparkles className="w-3 h-3 mr-2" />
+                The Future of Local Hiring
+              </Badge>
+              
+              <h1 className="text-7xl lg:text-[10rem] font-black text-slate-900 leading-[0.85] tracking-tighter italic">
+                Hire Elite. <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Track Live.</span>
+              </h1>
+              
+              <p className="text-xl lg:text-2xl text-slate-500 font-medium max-w-3xl mx-auto leading-relaxed">
+                Platform for verified local expertise. Connect with pros, book instantly, and track their arrival in real-time.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="w-full max-w-4xl bg-white p-5 rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(79,70,229,0.15)] border border-indigo-50/50 flex flex-col md:flex-row gap-4 items-center"
+            >
+              <div className="flex-grow w-full relative group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                <Input 
+                  placeholder="Need a Code Expert or Plumber?" 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="h-16 pl-16 bg-slate-50/50 border-none rounded-3xl font-bold text-lg text-slate-800 focus-visible:ring-2 focus-visible:ring-indigo-100 placeholder:text-slate-300"
+                />
               </div>
-            ))}
+              <Button onClick={() => document.getElementById('marketplace')?.scrollIntoView({behavior:'smooth'})} size="lg" className="w-full md:w-auto h-16 rounded-[2rem] px-12 bg-indigo-600 hover:bg-black text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-indigo-200 transition-all active:scale-95">
+                Explore Gigs
+              </Button>
+            </motion.div>
+
+            <div className="flex flex-wrap justify-center gap-10 pt-10">
+               {stats.map((s, i) => (
+                 <div key={i} className="text-center group">
+                    <p className={cn("text-3xl font-black tracking-tighter italic mb-1 transition-transform group-hover:-translate-y-1", s.color)}>{s.value}</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
+                 </div>
+               ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 📦 CATEGORIES */}
-      <section className="py-24 lg:py-32 bg-white">
-        <div className="container mx-auto px-6 text-center">
-          <div className="max-w-3xl mx-auto mb-20">
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-6 tracking-tight">Browse Categories</h2>
-            <p className="text-lg text-slate-500 font-medium leading-relaxed">Choose from our wide range of professional local services.</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8">
-            {categoryIcons.map((cat, i) => (
-              <button 
-                key={i} 
-                onClick={() => {
-                   setCategory(cat.name);
-                   document.getElementById('marketplace')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="group flex flex-col items-center p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-100 hover:-translate-y-2 hover:bg-white"
-              >
-                <div className={`w-20 h-20 ${cat.color} rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm`}>
-                  <cat.icon size={32} strokeWidth={1.5} />
-                </div>
-                <span className="text-lg font-black text-slate-800 tracking-tight">{cat.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* 🏙️ FEATURED GRID */}
+      <section id="marketplace" className="py-32 bg-slate-50/50 relative overflow-hidden">
+         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+         <div className="container mx-auto px-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20">
+               <div className="space-y-6">
+                  <Badge className="bg-white text-indigo-600 border-indigo-100 px-6 py-2 uppercase tracking-[0.3em] font-black italic">Live Marketplace</Badge>
+                  <h2 className="text-6xl font-black text-slate-900 tracking-tighter leading-none italic">Verified <br/> <span className="text-indigo-600 font-black">Neighborhood Pros.</span></h2>
+               </div>
+               <div className="flex flex-wrap gap-3">
+                  {categoriesList.map(cat => (
+                    <button 
+                      key={cat} 
+                      onClick={() => setCategory(cat)}
+                      className={cn(
+                        "px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300",
+                        category === cat ? "bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-100" : "bg-white text-slate-500 border-slate-200 hover:border-indigo-400 hover:shadow-lg"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+               </div>
+            </div>
+
+            {loadingServices ? (
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                  {[1,2,3].map(i => <div key={i} className="h-[500px] rounded-[3rem] bg-slate-200 animate-pulse"></div>)}
+               </div>
+            ) : (
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                  <AnimatePresence mode='popLayout'>
+                     {filteredServices.slice(0, 6).map((service, idx) => (
+                        <motion.div
+                          key={service._id}
+                          layout
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.5, delay: idx * 0.1 }}
+                        >
+                           <Card className="group border-none shadow-none bg-transparent hover:-translate-y-4 transition-all duration-700">
+                              <CardHeader className="p-0 relative rounded-[3.5rem] overflow-hidden shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] group-hover:shadow-indigo-200 group-hover:shadow-[0_40px_80px_-20px_rgba(79,70,229,0.25)] transition-all">
+                                 <img 
+                                   src={service.image || `https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&q=80&w=1000`} 
+                                   className="w-full h-[420px] object-cover group-hover:scale-110 transition-transform duration-[2s] ease-out" 
+                                 />
+                                 <div className="absolute top-8 left-8 flex gap-3">
+                                    <Badge className="bg-white/90 backdrop-blur-md text-indigo-600 border-none px-6 py-2 font-black uppercase text-[10px] tracking-[0.2em] shadow-lg italic">{service.category}</Badge>
+                                 </div>
+                                 <div className="absolute top-8 right-8 w-12 h-12 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center text-amber-500 shadow-xl">
+                                    <Star size={20} fill="currentColor" />
+                                 </div>
+                                 <div className="absolute bottom-8 left-8 right-8 p-8 bg-white/90 backdrop-blur-xl rounded-[2.5rem] border border-white/50 translate-y-2 group-hover:translate-y-0 transition-transform duration-700 opacity-90">
+                                    <div className="flex justify-between items-end">
+                                       <div className="space-y-1">
+                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Starting at</p>
+                                          <p className="text-3xl font-black text-slate-900 tracking-tighter italic leading-none">Rs. {service.price}</p>
+                                       </div>
+                                       <div className="flex gap-2">
+                                          <Button asChild variant="outline" className="h-14 px-6 rounded-2xl border-slate-200 hover:bg-slate-50 text-slate-900 font-black text-[10px] uppercase tracking-widest transition-all">
+                                             <Link to={`/services/${service._id}`}>View Details</Link>
+                                          </Button>
+                                          <Button asChild className="h-14 px-8 rounded-2xl bg-indigo-600 hover:bg-black text-white shadow-xl transition-all font-black text-[10px] uppercase tracking-widest">
+                                             <Link to={`/checkout/${service._id}`}>Buy Now</Link>
+                                          </Button>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </CardHeader>
+                              <CardContent className="px-4 pt-10 space-y-4">
+                                 <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-black text-xs">
+                                       {service.providerId?.name?.charAt(0) || 'P'}
+                                    </div>
+                                    <div className="flex-grow">
+                                       <p className="text-sm font-black text-slate-800">{service.providerId?.name || 'Professional'}</p>
+                                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                          <MapPin size={10} className="text-indigo-400" />
+                                          {service.location}
+                                       </p>
+                                    </div>
+                                 </div>
+                                 <h3 className="text-3xl font-black text-slate-900 leading-[0.9] tracking-tighter italic group-hover:text-indigo-600 transition-colors line-clamp-2">
+                                    I will {service.title}
+                                 </h3>
+                              </CardContent>
+                           </Card>
+                        </motion.div>
+                     ))}
+                  </AnimatePresence>
+               </div>
+            )}
+
+            <div className="mt-32 text-center">
+               <Button asChild variant="outline" className="h-16 px-12 rounded-3xl border-2 border-slate-900 hover:bg-slate-900 hover:text-white font-black uppercase text-xs tracking-widest transition-all">
+                  <Link to="/services">View All 1,000+ Services <ArrowRight className="ml-3 w-5 h-5" /></Link>
+               </Button>
+            </div>
+         </div>
+         <div className="absolute bottom-0 right-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
       </section>
 
-      {/* ── Live Location Section (Small CTA) ── */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto bg-indigo-600 rounded-[3rem] p-12 lg:p-20 text-white overflow-hidden relative">
-           <div className="absolute top-0 right-0 w-1/3 h-full bg-white/5 skew-x-12 translate-x-1/4"></div>
-           <div className="relative z-10 flex flex-col lg:flex-row items-center gap-12">
-              <div className="flex-grow text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-6">
-                  <Navigation size={14} />
-                  Live Tracking Enabled
-                </div>
-                <h2 className="text-4xl lg:text-5xl font-black mb-6 leading-tight">Real-time Freelancer Tracking</h2>
-                <p className="text-indigo-100 text-lg font-medium max-w-2xl">
-                  Peace of mind with every booking. Track your hired professional's location in real-time as they head to your job site.
-                </p>
-              </div>
-              <div className="shrink-0">
-                 <Link to="/register" className="bg-white text-indigo-600 hover:bg-black hover:text-white px-10 py-5 rounded-2xl font-black text-xl transition-all shadow-2xl active:scale-95 block text-center">
-                    Join Now
-                 </Link>
-              </div>
-           </div>
-        </div>
+      {/* 🛡️ TRUST & LIVE TRACKING SECTION */}
+      <section className="py-40 px-6 container mx-auto">
+         <div className="bg-slate-900 rounded-[4rem] p-12 lg:p-32 text-white relative overflow-hidden group">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.15),transparent_70%)]"></div>
+            <div className="absolute top-0 right-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
+            
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+               <div className="space-y-12">
+                  <div className="inline-flex items-center gap-3 bg-indigo-600/20 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-400 border border-indigo-500/30">
+                     <ShieldCheck size={16} />
+                     Pakistan's Safest Marketplace
+                  </div>
+                  <h2 className="text-6xl lg:text-8xl font-black tracking-[calc(-0.04em)] leading-[0.85] italic">
+                     Track. <br/> Safety. <br/> <span className="text-indigo-400">Guaranteed.</span>
+                  </h2>
+                  <p className="text-xl text-slate-400 font-medium max-w-lg leading-relaxed">
+                     Every booking comes with a live GPS link. Follow your pro on the map from the moment they leave for your location. 
+                  </p>
+                  <div className="grid grid-cols-2 gap-8">
+                     <div className="space-y-2">
+                        <Trophy className="text-indigo-500" size={32} />
+                        <h4 className="font-black text-lg">Elite Talent</h4>
+                        <p className="text-xs text-slate-500 font-medium">Top 2% vetted experts only.</p>
+                     </div>
+                     <div className="space-y-2">
+                        <Globe className="text-emerald-500" size={32} />
+                        <h4 className="font-black text-lg">Countrywide</h4>
+                        <p className="text-xs text-slate-500 font-medium">Serving 15+ major cities.</p>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="relative flex justify-center">
+                  <div className="w-full aspect-square bg-white shadow-2xl rounded-[4rem] p-10 flex flex-col items-center justify-center text-slate-900 space-y-8 animate-float">
+                     <div className="w-24 h-24 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                        <Navigation size={40} className="animate-pulse" />
+                     </div>
+                     <div className="text-center space-y-2">
+                        <h3 className="text-4xl font-black tracking-tighter italic">Live Radar</h3>
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest italic">Signal Pulse Active</p>
+                     </div>
+                     <div className="w-full bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
+                        <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                           <span>Signal Strength</span>
+                           <span className="text-emerald-500 text-[12px]">98.2%</span>
+                        </div>
+                        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                           <motion.div 
+                             initial={{ width: 0 }}
+                             whileInView={{ width: '98%' }}
+                             transition={{ duration: 1.5 }}
+                             className="h-full bg-indigo-600"
+                           ></motion.div>
+                        </div>
+                     </div>
+                     <Button className="w-full h-16 rounded-2xl bg-indigo-600 hover:bg-black text-white font-black uppercase text-xs tracking-widest shadow-2xl">
+                        Demo Tracking Link
+                     </Button>
+                  </div>
+                  <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] -z-10 rounded-full scale-110"></div>
+               </div>
+            </div>
+         </div>
       </section>
+
     </div>
   );
 };
