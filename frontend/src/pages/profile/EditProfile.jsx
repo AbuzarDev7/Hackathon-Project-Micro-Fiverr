@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 const EditProfile = () => {
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -26,7 +26,9 @@ const EditProfile = () => {
     avatar: user?.avatar || '',
     bio: user?.bio || '',
     phone: user?.phone || '',
-    skills: user?.skills || []
+    skills: user?.skills || [],
+    lat: user?.lat || null,
+    long: user?.long || null
   });
   const [newSkill, setNewSkill] = useState('');
   const [loading, setLoading] = useState(false);
@@ -71,10 +73,15 @@ const EditProfile = () => {
       const config = {
         headers: { Authorization: `Bearer ${token}` }
       };
-      await axios.put('/api/auth/profile', formData, config);
+      const res = await axios.put('/api/auth/profile', formData, config);
+      // Update user in context AND localStorage so avatar persists after logout
+      if (res.data?.user) {
+        updateUser(res.data.user);
+      } else {
+        updateUser(formData); // fallback: save what we have
+      }
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-      window.location.reload(); 
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || 'Failed to update profile.');
@@ -163,17 +170,38 @@ const EditProfile = () => {
                 {/* Location */}
                 <div className="space-y-3 group">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block group-focus-within:text-indigo-600 transition-colors">Location</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
-                    <input 
-                      type="text" 
-                      name="location"
-                      value={formData.location}
-                      onChange={handleChange}
-                      placeholder="e.g. Karachi, Sindh"
-                      className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
-                      required
-                    />
+                  <div className="relative flex gap-2">
+                    <div className="relative flex-grow">
+                      <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                      <input 
+                        type="text" 
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        placeholder="e.g. Karachi, Sindh"
+                        className="w-full pl-16 pr-8 py-5 bg-slate-50 border border-transparent rounded-[1.8rem] text-slate-800 text-base outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 font-medium"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition((pos) => {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              lat: pos.coords.latitude, 
+                              long: pos.coords.longitude,
+                              location: "Current Location Detected"
+                            }));
+                            alert("Location Coordinates Captured!");
+                          });
+                        }
+                      }}
+                      className="px-6 bg-slate-900 text-white rounded-[1.8rem] font-black text-xs hover:bg-indigo-600 transition-all"
+                    >
+                      PIN GPS
+                    </button>
                   </div>
                 </div>
 

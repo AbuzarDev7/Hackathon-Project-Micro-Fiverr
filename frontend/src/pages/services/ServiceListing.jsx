@@ -184,16 +184,29 @@ const ServiceListing = () => {
                         <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mb-0.5 leading-none">Pro Developer</p>
                         <p className="text-sm font-black text-slate-800 truncate">{service.providerId?.name || 'Professional'}</p>
                      </div>
-                     <Link 
-                       to="/chat"
-                       state={{
-                         introProvider: service.providerId,
-                         introMessage: `Hi! I am interested in your gig: "${service.title}"`
-                       }}
-                       className="w-10 h-10 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95 border border-emerald-100"
-                     >
-                       <MessageSquare size={16} />
-                     </Link>
+                      <Link 
+                        to="/radar"
+                        state={{ 
+                          focusFreelancer: service.providerId?._id,
+                          lat: service.providerId?.lat,
+                          lng: service.providerId?.long
+                        }}
+                        className="w-10 h-10 bg-indigo-50 text-indigo-600 hover:bg-indigo-500 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95 border border-indigo-100"
+                        title="View on Map"
+                      >
+                        <MapPin size={16} />
+                      </Link>
+                      <Link 
+                        to="/chat"
+                        state={{
+                          introProvider: service.providerId,
+                          introMessage: `Hi! I am interested in your gig: "${service.title}"`
+                        }}
+                        className="w-10 h-10 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95 border border-emerald-100"
+                        title="Chat with Seller"
+                      >
+                        <MessageSquare size={16} />
+                      </Link>
                   </div>
                 </div>
               </div>

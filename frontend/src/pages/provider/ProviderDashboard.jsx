@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
+import LocationSender from '../../components/tracking/LocationSender';
+import socket from '../../utils/socket';
 
 const ProviderDashboard = () => {
   const { user, token } = useAuth();
@@ -41,6 +43,21 @@ const ProviderDashboard = () => {
     };
     if (token) fetchStats();
   }, [token]);
+
+  const [isOnline, setIsOnline] = useState(user?.isOnline || false);
+
+  const toggleOnline = () => {
+    const newStatus = !isOnline;
+    setIsOnline(newStatus);
+    socket.emit("set_online", { userId: user?._id, isOnline: newStatus });
+  };
+
+  useEffect(() => {
+    // Sync initial status
+    if (user?._id) {
+       socket.emit("set_online", { userId: user._id, isOnline: isOnline });
+    }
+  }, [user]);
 
   const stats = [
     { label: 'Active Services', value: vendorStats.servicesCount, icon: Briefcase, color: 'bg-indigo-500/10 text-indigo-500' },
@@ -73,9 +90,12 @@ const ProviderDashboard = () => {
             <div className="text-center md:text-left space-y-2">
               <div className="flex items-center justify-center md:justify-start gap-3">
                 <h1 className="text-4xl font-black text-white tracking-tight">Howdy, {user?.name?.split(' ')[0] || 'Freelancer'}!</h1>
-                <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-500/20">Pro Vendor</span>
+                <div onClick={toggleOnline} className="cursor-pointer group/toggle">
+                   <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${isOnline ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+                      {isOnline ? '● Online' : '○ Offline'}
+                   </span>
+                </div>
               </div>
-              <p className="text-slate-400 font-medium max-w-md">You have 3 new inquiries and 2 services pending review. Let's make today productive.</p>
               <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
                   <MapPin size={14} className="text-slate-600" />
@@ -152,6 +172,9 @@ const ProviderDashboard = () => {
         </div>
 
         <div className="space-y-8">
+          {/* 📡 LIVE LOCATION SENDER */}
+          <LocationSender bookingId="DEMO_ORDER_123" userId={user?._id} />
+
           <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[3rem] p-10 text-white relative overflow-hidden group shadow-2xl shadow-indigo-500/20">
             <div className="relative z-10 space-y-6">
               <div className="space-y-2">

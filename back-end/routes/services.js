@@ -7,7 +7,7 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 router.get("/", async (req, res) => {
   try {
     const services = await Service.find()
-      .populate("providerId", "name email location")
+      .populate("providerId", "name email location lat long avatar")
       .sort({ createdAt: -1 });
     res.status(200).json(services);
   } catch (error) {

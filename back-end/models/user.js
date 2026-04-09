@@ -62,6 +62,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 67.0011, // Default Karachi long
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

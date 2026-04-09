@@ -20,11 +20,15 @@ import MyApplications from './pages/provider/MyApplications';
 // Client Pages (Restricted Experience)
 import LeaveReview from './pages/client/LeaveReview';
 import ActiveHires from './pages/client/ActiveHires';
+import CustomerDashboard from './pages/CustomerDashboard';
 
 // Booking & Tracking
 import ServiceDetail from './pages/services/ServiceDetail';
 import Checkout from './pages/checkout/Checkout';
 import LiveTracking from './pages/tracking/LiveTracking';
+import FreelancerRadar from './pages/client/FreelancerRadar';
+import LiveClientTracking from './pages/provider/LiveClientTracking';
+import TrackingRequestModal from './components/tracking/TrackingRequestModal';
 
 // Common Pages
 import BrowseJobs from './pages/jobs/BrowseJobs';
@@ -53,7 +57,9 @@ const freelancerRoutes = [
 ];
 
 const clientRoutes = [
-  { path: 'chat',              element: <ChatPage /> },           // /dashboard/client/chat
+  { path: '',                  element: <CustomerDashboard /> },   // /dashboard/client
+  { path: 'chat',              element: <ChatPage /> },            // /dashboard/client/chat
+  { path: 'profile',           element: <EditProfile /> },         // /dashboard/client/profile
 ];
 
 
@@ -103,6 +109,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <TrackingRequestModal />
         <Routes>
           {/* ── Public Routes ── */}
           <Route path="/"         element={<MainLayout><Home /></MainLayout>} />
@@ -112,6 +119,8 @@ function App() {
           <Route path="/jobs/:id" element={<MainLayout><JobDetail /></MainLayout>} />
           <Route path="/services" element={<MainLayout><ServiceListing /></MainLayout>} />
           <Route path="/services/:id" element={<MainLayout><ServiceDetail /></MainLayout>} />
+          <Route path="/radar" element={<MainLayout><ProtectedRoute roles={[ROLES.CLIENT]}><FreelancerRadar /></ProtectedRoute></MainLayout>} />
+          <Route path="/track-client/:bookingId" element={<ProtectedRoute roles={[ROLES.FREELANCER]}><LiveClientTracking /></ProtectedRoute>} />
           <Route path="/checkout/:serviceId" element={<MainLayout><ProtectedRoute><Checkout /></ProtectedRoute></MainLayout>} />
           <Route path="/track/:bookingId" element={<MainLayout><ProtectedRoute><LiveTracking /></ProtectedRoute></MainLayout>} />
           <Route path="/active-hires" element={<MainLayout><ProtectedRoute><ActiveHires /></ProtectedRoute></MainLayout>} />
@@ -140,6 +149,32 @@ function App() {
           >
             {mapRoutes(freelancerRoutes)}
           </Route>
+
+          {/* ── Client Dashboard Routes ── */}
+          <Route
+            path="/dashboard/client"
+            element={
+              <ProtectedRoute roles={[ROLES.CLIENT]}>
+                <MainLayout><CustomerDashboard /></MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/client/chat"
+            element={
+              <ProtectedRoute roles={[ROLES.CLIENT]}>
+                <MainLayout><ChatPage /></MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/client/profile"
+            element={
+              <ProtectedRoute roles={[ROLES.CLIENT]}>
+                <MainLayout><EditProfile /></MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* ── Client Routes (Simplified: Browser & Chat only) ── */}
           <Route path="/active-hires" element={<MainLayout><ProtectedRoute roles={[ROLES.CLIENT]}><ActiveHires /></ProtectedRoute></MainLayout>} />

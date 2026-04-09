@@ -138,6 +138,8 @@ router.put("/profile", protect, async (req, res) => {
     if (bio !== undefined) user.bio = bio;
     if (skills !== undefined) user.skills = Array.isArray(skills) ? skills : skills.split(",").map(s => s.trim());
     if (location !== undefined) user.location = location;
+    if (req.body.lat !== undefined) user.lat = req.body.lat;
+    if (req.body.long !== undefined) user.long = req.body.long;
 
     await user.save();
 

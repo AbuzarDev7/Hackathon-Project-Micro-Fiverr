@@ -9,7 +9,13 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Load user from localStorage on startup (avatar & profile persist)
+    try {
+      const saved = localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
@@ -64,6 +70,7 @@ export const AuthProvider = ({ children }) => {
       const { token: newToken, user: newUser } = response.data;
       
       localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(newUser)); // persist user data
       setToken(newToken);
       setUser(newUser);
       setAuthHeader(newToken);
@@ -85,8 +92,9 @@ export const AuthProvider = ({ children }) => {
         msg = error.message;
       }
       
-      setLoading(false);
       return { success: false, message: msg };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,6 +106,7 @@ export const AuthProvider = ({ children }) => {
       const { token: newToken, user: newUser } = response.data;
       
       localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(newUser)); // persist user data
       setToken(newToken);
       setUser(newUser);
       setAuthHeader(newToken);
@@ -116,13 +125,22 @@ export const AuthProvider = ({ children }) => {
         msg = error.message;
       }
       
-      setLoading(false);
       return { success: false, message: msg };
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Update user in both state and localStorage (called after profile save)
+  const updateUser = (updatedUser) => {
+    const merged = { ...user, ...updatedUser };
+    setUser(merged);
+    localStorage.setItem('user', JSON.stringify(merged));
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user'); // clear saved user on logout
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
@@ -135,6 +153,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
     isAuthenticated: !!user,
     isFreelancer: user?.role === 'freelancer', 
     isCustomer: user?.role === 'client', 

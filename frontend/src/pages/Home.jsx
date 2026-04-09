@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { getDistance } from '../utils/geo';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
@@ -26,9 +27,24 @@ const Home = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [location, setLocation] = useState('');
-  const [priceRange, setPriceRange] = useState(5000);
+  const [priceRange, setPriceRange] = useState(50000);
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => console.error("Error getting location:", error)
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -76,15 +92,15 @@ const Home = () => {
     { name: 'Other', icon: Layers, color: 'bg-slate-50 text-slate-600' },
   ];
 
-  const filteredServices = services.filter((job) => {
+  const filteredServices = services.filter((service) => {
     const matchesSearch =
-      job.title?.toLowerCase().includes(search.toLowerCase()) ||
-      job.location?.toLowerCase().includes(search.toLowerCase()) ||
-      job.providerId?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = category === 'All' || job.category === category;
+      service.title?.toLowerCase().includes(search.toLowerCase()) ||
+      service.location?.toLowerCase().includes(search.toLowerCase()) ||
+      service.providerId?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = category === 'All' || service.category === category;
     const matchesLocation =
-      location === '' || job.location?.toLowerCase().includes(location.toLowerCase());
-    const matchesPrice = job.budget <= priceRange;
+      location === '' || service.location?.toLowerCase().includes(location.toLowerCase());
+    const matchesPrice = !service.price || service.price <= priceRange;
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
 
@@ -220,52 +236,63 @@ const Home = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {filteredServices.map((job) => (
+            {filteredServices.map((service) => (
               <div
-                key={job._id}
+                key={service._id}
                 className="group bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:border-indigo-100 transition-all duration-500 flex flex-col"
               >
-                {/* Job Image */}
+                {/* Service Image */}
                 <div className="h-56 w-full bg-slate-100 relative overflow-hidden">
-                  {job.image ? (
-                    <img src={job.image} alt={job.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  {service.image ? (
+                    <img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-300">
                       <Layers size={64} strokeWidth={1} />
                     </div>
                   )}
                   <div className="absolute top-5 left-5 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-[10px] font-black text-indigo-600 uppercase tracking-widest border border-slate-100 shadow-sm z-10">
-                    {job.category || 'General'}
+                    {service.category || 'General'}
                   </div>
                   <div className="absolute bottom-5 right-5 bg-indigo-600 px-4 py-1.5 rounded-full text-sm font-black text-white shadow-lg">
-                    ${job.budget}
+                    Rs. {service.price?.toLocaleString()}
                   </div>
                 </div>
 
                 <div className="p-8 flex flex-col flex-grow">
                   <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors leading-tight">
-                    {job.title}
+                    {service.title}
                   </h3>
                   <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6 line-clamp-3">
-                    {job.description}
+                    {service.description}
                   </p>
 
                   <div className="mt-auto">
                     <div className="flex items-center gap-3 mb-6 pt-6 border-t border-slate-50">
-                      <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold border border-indigo-100">
-                        {job.providerId?.name?.charAt(0) || 'U'}
+                      <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold border border-indigo-100 overflow-hidden">
+                         {service.providerId?.avatar ? (
+                          <img src={service.providerId.avatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          service.providerId?.name?.charAt(0) || 'U'
+                        )}
                       </div>
                       <div className="flex-grow">
-                        <p className="text-sm font-black text-slate-800">{job.providerId?.name || 'Unknown User'}</p>
+                        <p className="text-sm font-black text-slate-800">{service.providerId?.name || 'Unknown'}</p>
                         <div className="flex items-center gap-1.5 text-slate-400 px-0.5">
                           <MapPin size={12} className="text-indigo-300" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">{job.location}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            {service.location} 
+                            {userLocation && service.providerId?.lat && (
+                              <span className="text-indigo-600 ml-1">
+                                ({getDistance(userLocation.lat, userLocation.lng, service.providerId.lat, service.providerId.long)} km away)
+                              </span>
+                            )}
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => handleHireClick(job._id)}
+                      onClick={() => handleHireClick(service._id)}
                       className="w-full py-4 bg-slate-900 hover:bg-indigo-600 text-white font-black rounded-2xl transition-all duration-300 shadow-lg active:scale-95"
                     >
                       View Details

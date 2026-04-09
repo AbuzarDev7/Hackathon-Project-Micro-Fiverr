@@ -21,7 +21,7 @@ const Register = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/login');
     }
   }, [isAuthenticated, navigate]);
 
@@ -34,8 +34,8 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    if (!formData.name || !formData.email || !formData.password || !formData.role || !formData.location) {
-      setError('Please fill in all fields to join.');
+    if (!formData.name || !formData.email || !formData.password || !formData.role) {
+      setError('Please fill in name, email, password and role.');
       return;
     }
 
@@ -47,7 +47,7 @@ const Register = () => {
         setSuccess(true);
         setTimeout(() => {
           navigate('/login');
-        }, 2000);
+        }, 1500);
       } else {
         setError(result.message);
       }
