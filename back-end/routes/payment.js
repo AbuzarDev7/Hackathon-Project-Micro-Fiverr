@@ -12,8 +12,19 @@ router.post("/fake-payment", protect, async (req, res) => {
     const { freelancerId, serviceId, amount } = req.body;
     const clientId = req.user._id;
 
+    console.log("💳 Payment Request:", { freelancerId, serviceId, amount, clientId });
+
     if (!freelancerId || !amount || !serviceId) {
-      return res.status(400).json({ message: "Missing payment details" });
+      return res.status(400).json({ 
+        message: "Missing payment details", 
+        received: { freelancerId, serviceId, amount } 
+      });
+    }
+
+    // Ensure freelancer exists
+    const freelancer = await User.findById(freelancerId);
+    if (!freelancer) {
+      return res.status(404).json({ message: "Freelancer not found" });
     }
 
     // 1. Create Transaction record
@@ -21,27 +32,24 @@ router.post("/fake-payment", protect, async (req, res) => {
       clientId,
       freelancerId,
       serviceId,
-      amount,
+      amount: Number(amount),
       clientName: req.user.name,
       status: "paid",
-      isConfirmed: false // New field for freelancer to confirm
+      isConfirmed: false
     });
 
     // 2. Update Freelancer's balance
-    const freelancer = await User.findById(freelancerId);
-    if (freelancer) {
-      freelancer.balance = (freelancer.balance || 0) + Number(amount);
-      await freelancer.save();
+    freelancer.balance = (freelancer.balance || 0) + Number(amount);
+    await freelancer.save();
       
-      // 3. Notify freelancer via Socket.io
-      const io = req.app.get("socketio");
-      if (io) {
-        io.to(freelancerId.toString()).emit("payment_received", {
-          amount,
-          clientName: req.user.name,
-          transactionId: transaction._id,
-        });
-      }
+    // 3. Notify freelancer via Socket.io
+    const io = req.app.get("socketio");
+    if (io) {
+      io.to(freelancerId.toString()).emit("payment_received", {
+        amount,
+        clientName: req.user.name,
+        transactionId: transaction._id,
+      });
     }
 
     res.status(201).json({
@@ -50,8 +58,8 @@ router.post("/fake-payment", protect, async (req, res) => {
       transaction,
     });
   } catch (err) {
-    console.error("Payment error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("❌ Payment Error:", err);
+    res.status(500).json({ message: "Internal server error: " + err.message });
   }
 });
 
