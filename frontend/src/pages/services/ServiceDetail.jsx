@@ -23,6 +23,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../comp
 import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
+import StarRating from '../../components/ui/StarRating';
+import api from '../../utils/api';
 
 const ServiceDetail = () => {
   const { id } = useParams();
@@ -35,21 +37,33 @@ const ServiceDetail = () => {
   const [processing, setProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
+  // Review states
+  const [reviews, setReviews] = useState([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newRating, setNewRating] = useState(0);
+  const [newComment, setNewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   const location = useLocation();
 
   useEffect(() => {
-    const fetchService = async () => {
+    const fetchData = async () => {
       try {
         const res = await axios.get(`/api/services/${id}`);
         setService(res.data);
         setCustomAmount(res.data.price);
+        
+        // Fetch reviews for this provider
+        const providerId = res.data.providerId._id || res.data.providerId;
+        const reviewsRes = await axios.get(`/api/reviews/${providerId}`);
+        setReviews(reviewsRes.data);
       } catch (err) {
-        console.error("Error fetching service", err);
+        console.error("Error fetching service data", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchService();
+    fetchData();
   }, [id, location.state]);
 
   const handleDemoPayment = async () => {
@@ -76,6 +90,34 @@ const ServiceDetail = () => {
       alert("Payment failed: " + (err.response?.data?.message || "Unknown error"));
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (newRating === 0) return alert('Please select a star rating.');
+    if (!newComment.trim()) return alert('Please enter your review comment.');
+    
+    setSubmittingReview(true);
+    try {
+      const providerId = service.providerId._id || service.providerId;
+      const res = await api.post('/reviews', {
+        receiverId: providerId,
+        rating: newRating,
+        comment: newComment
+      });
+      
+      // Provide an immediate optimistic UI update or real backend response
+      // Since our GET route populates reviewer, we might need a dummy populate or just re-fetch
+      const reviewsRes = await axios.get(`/api/reviews/${providerId}`);
+      setReviews(reviewsRes.data);
+      
+      setShowReviewForm(false);
+      setNewRating(0);
+      setNewComment('');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error submitting review');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -130,9 +172,13 @@ const ServiceDetail = () => {
             <div className="space-y-6 uppercase font-black tracking-widest">
                <div className="flex flex-wrap items-center gap-4">
                   <Badge className="bg-indigo-600 text-white border-none px-6 py-2 tracking-widest italic">{service.category}</Badge>
+                  <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100 shadow-sm">
+                     <StarRating value={service.rating || 5} readonly size={16} />
+                     <span className="text-sm font-black text-amber-700 italic">{service.rating || '5.0'}</span>
+                  </div>
                </div>
                <h1 className="text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9] italic lowercase first-letter:uppercase">
-                  I will {service.title}
+                  {service.title.toLowerCase().startsWith('i will') ? service.title : `I will ${service.title}`}
                </h1>
             </div>
 
@@ -162,6 +208,87 @@ const ServiceDetail = () => {
                <h3 className="text-3xl font-black text-slate-900 tracking-tight italic border-l-4 border-indigo-600 pl-6">About This Gig</h3>
                <div className="text-lg text-slate-600 font-medium leading-[1.8] whitespace-pre-wrap italic">
                   {service.description}
+               </div>
+            </div>
+
+            {/* 🔥 NEW REVIEWS & RATING SECTION */}
+            <div className="border-t border-indigo-100 pt-12 space-y-8 mt-12">
+               <div className="flex items-center justify-between">
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight italic border-l-4 border-amber-400 pl-6">
+                     Client Reviews ({reviews.length})
+                  </h3>
+                  {isAuthenticated && (
+                     <Button 
+                        onClick={() => setShowReviewForm(!showReviewForm)}
+                        variant="outline" 
+                        className="rounded-2xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold"
+                     >
+                        {showReviewForm ? 'Cancel' : 'Write a Review'}
+                     </Button>
+                  )}
+               </div>
+
+               {/* Add Review Form Segment */}
+               {showReviewForm && (
+                  <Card className="border-indigo-100 shadow-xl shadow-indigo-100/50 rounded-[2.5rem] p-8 animate-in slide-in-from-top-4 duration-300">
+                     <h4 className="text-xl font-black text-slate-900 mb-6 italic">Rate your experience</h4>
+                     <div className="space-y-6">
+                        <div>
+                           <StarRating 
+                              value={newRating} 
+                              onChange={setNewRating} 
+                              size={36} 
+                              className="gap-2" 
+                           />
+                        </div>
+                        <textarea
+                           value={newComment}
+                           onChange={(e) => setNewComment(e.target.value)}
+                           placeholder="Share details of your experience with this professional..."
+                           rows={4}
+                           className="w-full bg-slate-50 border border-slate-200 rounded-[1.5rem] p-6 outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all resize-none text-slate-700"
+                        ></textarea>
+                        <Button 
+                           onClick={handleSubmitReview}
+                           disabled={submittingReview}
+                           className="w-full h-14 bg-slate-900 hover:bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest transition-all"
+                        >
+                           {submittingReview ? 'Submitting...' : 'Post Review'}
+                        </Button>
+                     </div>
+                  </Card>
+               )}
+
+               {/* Existing Reviews List */}
+               <div className="grid gap-6">
+                  {reviews.length === 0 ? (
+                     <div className="text-center py-10 bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200">
+                        <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500 font-medium pb-2">No reviews yet. Be the first to try this service!</p>
+                     </div>
+                  ) : (
+                     reviews.map(review => (
+                        <div key={review._id} className="bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm flex flex-col gap-4">
+                           <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex flex-col items-center justify-center font-black text-lg border border-indigo-100">
+                                    {review.reviewer?.name?.charAt(0) || 'U'}
+                                 </div>
+                                 <div>
+                                    <h5 className="font-bold text-slate-900 leading-tight">{review.reviewer?.name || 'Client'}</h5>
+                                    <span className="text-xs font-bold text-slate-400 italic">
+                                       {new Date(review.createdAt).toLocaleDateString()}
+                                    </span>
+                                 </div>
+                              </div>
+                              <StarRating value={review.rating} readonly size={14} className="gap-0.5" />
+                           </div>
+                           <p className="text-slate-700 leading-relaxed font-medium pl-16">
+                              "{review.comment}"
+                           </p>
+                        </div>
+                     ))
+                  )}
                </div>
             </div>
 

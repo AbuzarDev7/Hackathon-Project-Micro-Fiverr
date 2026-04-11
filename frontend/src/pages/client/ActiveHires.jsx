@@ -105,6 +105,12 @@ const ActiveHires = () => {
                   >
                     Chat
                   </Link>
+                  <Link 
+                    to={`/review/${booking.providerId?._id || booking.providerId}`}
+                    className="flex-grow py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-100 active:scale-95"
+                  >
+                    Rate
+                  </Link>
                </div>
             </div>
           ))}

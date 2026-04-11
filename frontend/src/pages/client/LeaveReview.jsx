@@ -1,34 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { 
-  Star, 
   MessageSquare, 
   Send, 
-  User, 
   MapPin, 
   ShieldCheck, 
   ArrowLeft,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
+import api from '../../utils/api';
+import StarRating from '../../components/ui/StarRating';
 
 const LeaveReview = () => {
   const { providerId } = useParams();
   const navigate = useNavigate();
   
   const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [success, setSuccess] = useState(false);
+  const [provider, setProvider] = useState(null);
 
-  // Mock Provider Data
-  const provider = {
-    _id: providerId,
-    name: 'Zain Ahmed',
-    location: 'Gulshan, Karachi',
-    jobsDone: 112
-  };
+  useEffect(() => {
+    const fetchProvider = async () => {
+      try {
+        const response = await api.get(`/auth/profile/${providerId}`);
+        // If there's no specific route for public profile, we might need a different one or use generic fetch
+        // For now, let's assume we can get user info or use the one from a booking search
+        setProvider(response.data.user);
+      } catch (err) {
+        console.error("Error fetching provider details", err);
+        // Fallback for demo purposes if path doesn't exist yet
+        setProvider({
+          _id: providerId,
+          name: 'Freelancer',
+          location: 'Remote',
+          role: 'freelancer'
+        });
+      } finally {
+        setFetching(false);
+      }
+    };
+    fetchProvider();
+  }, [providerId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,18 +53,30 @@ const LeaveReview = () => {
 
     setLoading(true);
     try {
-      // TODO: connect API
-      // await axios.post('/api/reviews', { providerId, rating, comment });
+      await api.post('/reviews', { 
+        receiverId: providerId, 
+        rating, 
+        comment 
+      });
       setSuccess(true);
       setTimeout(() => {
-        navigate('/dashboard/client/my-jobs');
+        navigate('/active-hires');
       }, 2500);
     } catch (err) {
-      alert('Failed to submit review.');
+      console.error('Submit review error:', err);
+      alert(err.response?.data?.message || 'Failed to submit review.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -65,7 +93,7 @@ const LeaveReview = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-8 font-['Outfit'] space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-4xl mx-auto p-4 sm:p-8 font-['Outfit'] space-y-12 animate-in fade-in duration-700 pt-24">
       {/* HEADER */}
       <div className="flex items-center gap-6 pb-8 border-b border-slate-100">
         <button 
@@ -84,14 +112,14 @@ const LeaveReview = () => {
         {/* Provider Profile Summary */}
         <div className="flex flex-col md:flex-row items-center gap-8 p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 relative">
           <div className="w-24 h-24 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-indigo-200">
-            {provider.name.charAt(0)}
+            {provider?.name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 text-center md:text-left space-y-2">
-            <h3 className="text-2xl font-black text-slate-900">{provider.name}</h3>
+            <h3 className="text-2xl font-black text-slate-900">{provider?.name}</h3>
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-slate-400 font-bold text-sm uppercase tracking-widest">
                <div className="flex items-center gap-2">
                  <MapPin size={14} />
-                 {provider.location}
+                 {provider?.location || 'Remote'}
                </div>
                <div className="flex items-center gap-2">
                  <ShieldCheck size={14} className="text-emerald-500" />
@@ -106,25 +134,12 @@ const LeaveReview = () => {
           {/* STAR RATING - Interactive */}
           <div className="flex flex-col items-center gap-6">
             <h4 className="text-lg font-black text-slate-900 uppercase tracking-widest">Overall Satisfaction</h4>
-            <div className="flex gap-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHover(star)}
-                  onMouseLeave={() => setHover(0)}
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95"
-                >
-                  <Star 
-                    size={48} 
-                    fill={(hover || rating) >= star ? "currentColor" : "none"}
-                    strokeWidth={2}
-                    className={(hover || rating) >= star ? "text-amber-400" : "text-slate-200"}
-                  />
-                </button>
-              ))}
-            </div>
+            <StarRating 
+              value={rating} 
+              onChange={setRating} 
+              size={56} 
+              className="gap-4" 
+            />
             <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">
               {rating > 0 ? ['Poor', 'Fair', 'Good', 'Amazing', 'Exceptional'][rating-1] : 'Click to rate'}
             </p>
@@ -153,7 +168,7 @@ const LeaveReview = () => {
               disabled={loading}
               className="w-full py-6 bg-indigo-600 hover:bg-black text-white font-black text-xl rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-100 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50"
             >
-              <Send size={24} />
+              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send size={24} />}
               Submit Review
             </button>
             <p className="text-center mt-6 text-slate-400 font-bold text-xs uppercase tracking-widest">

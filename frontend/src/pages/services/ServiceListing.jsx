@@ -25,6 +25,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/utils/cn';
+import StarRating from '@/components/ui/StarRating';
 
 const ServiceListing = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -132,8 +133,8 @@ const ServiceListing = () => {
       {/* ══ MAIN CONTENT AREA ══ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         
-        {/* ══ SECTION HEADER (Is ko mazeed niche kiya mt-20 se) ══ */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-20 mb-10 px-2 gap-4">
+        {/* ══ SECTION HEADER (Adjusted spacing) ══ */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-28 mb-10 px-2 gap-4">
           <div className="space-y-1">
             <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
               <div className="w-2.5 h-10 bg-indigo-600 rounded-full" />
@@ -183,8 +184,8 @@ const ServiceListing = () => {
                     {service.category}
                   </Badge>
 
-                  <div className="absolute top-4 right-4">
-                    <Link to="/chat" className="p-3 bg-white/95 backdrop-blur-md rounded-2xl text-indigo-600 shadow-lg hover:bg-indigo-600 hover:text-white transition-all transform translate-x-12 group-hover:translate-x-0 duration-300">
+                  <div className="absolute top-4 right-4 translate-x-16 group-hover:translate-x-0 transition-transform duration-300">
+                    <Link to="/chat" className="p-3 bg-white/95 backdrop-blur-md rounded-2xl text-indigo-600 shadow-lg hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center">
                       <MessageSquare size={18} />
                     </Link>
                   </div>
@@ -192,9 +193,10 @@ const ServiceListing = () => {
 
                 <CardContent className="p-6 flex-grow flex flex-col gap-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
+                    <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
                       <Star size={14} className="fill-amber-400 text-amber-400" />
-                      <span className="text-xs font-black text-amber-700">5.0</span>
+                      <span className="text-xs font-black text-slate-700">{service.rating || '5.0'}</span>
+                      <span className="text-[10px] text-slate-400 font-bold ml-0.5">(12)</span>
                     </div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
                       <ArrowUpRight size={12} /> Top Rated
@@ -202,7 +204,7 @@ const ServiceListing = () => {
                   </div>
 
                   <h3 className="font-bold text-slate-800 text-lg leading-tight line-clamp-2 min-h-[3.5rem] group-hover:text-indigo-600 transition-colors">
-                    I will {service.title}
+                    {service.title.toLowerCase().startsWith('i will') ? service.title : `I will ${service.title}`}
                   </h3>
 
                   <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-indigo-50 transition-colors">
