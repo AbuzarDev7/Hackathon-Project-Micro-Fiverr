@@ -15,8 +15,8 @@ import {
 import { Link } from 'react-router-dom';
 import { api } from '@/utils/api';
 import { useAuth } from '@/context/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 const MyServices = () => {
   const [viewMode, setViewMode] = useState('grid');

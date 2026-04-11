@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { Mail, MapPin, Sparkles, ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
 
 // shadcn/ui
-import { Button }    from '@/components/ui/button';
-import { Input }     from '@/components/ui/input';
+import { Button }    from '@/components/ui/Button';
+import { Input }     from '@/components/ui/Input';
 import { Separator } from '@/components/ui/separator';
-import { Badge }     from '@/components/ui/badge';
+import { Badge }     from '@/components/ui/Badge';
 
 /* ─── Social SVG Icons ─── */
 const InstagramIcon = () => (
