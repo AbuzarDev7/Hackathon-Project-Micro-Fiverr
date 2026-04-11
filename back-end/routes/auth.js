@@ -87,6 +87,10 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
+    if (user.isBanned) {
+      return res.status(403).json({ message: "Account Blocked: Your account has been permanently banned by an administrator." });
+    }
+
     // Compare password using bcrypt
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
@@ -116,6 +120,10 @@ router.post("/login", async (req, res) => {
 router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.isBanned) {
+      return res.status(403).json({ message: "Account Blocked: Your account has been permanently banned." });
+    }
     res.status(200).json({ user });
   } catch (error) {
     console.error("Get user error:", error);
