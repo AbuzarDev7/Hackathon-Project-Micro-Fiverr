@@ -1,25 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, User, Mail, Lock, ShieldCheck, ArrowRight, UserPlus, Briefcase, GraduationCap } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { cn } from '../utils/cn';
+import {
+  MapPin, User, Mail, Lock, ShieldCheck,
+  ArrowRight, UserPlus, Briefcase, GraduationCap,
+} from 'lucide-react';
 
+// shadcn/ui
+import { Button }   from '@/components/ui/Button';
+import { Input }    from '@/components/ui/Input';
+import { Label }    from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import {
+  Card, CardContent, CardDescription,
+  CardFooter, CardHeader, CardTitle,
+} from '@/components/ui/Card';
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+
+/* ── Success screen ── */
+const SuccessScreen = () => (
+  <div className="min-h-screen flex items-center justify-center bg-purple-50 px-4">
+    <Card className="w-full max-w-sm text-center shadow-lg border border-purple-100 py-10 px-6">
+      <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
+        <ShieldCheck className="h-7 w-7" />
+      </div>
+      <CardTitle className="text-xl font-bold text-slate-900 mb-2">Account Created!</CardTitle>
+      <CardDescription className="text-slate-500 text-sm leading-relaxed">
+        Welcome aboard. Redirecting you to login…
+      </CardDescription>
+    </Card>
+  </div>
+);
+
+/* ── Field wrapper ── */
+const Field = ({ label, icon: Icon, children }) => (
+  <div className="space-y-1.5">
+    <Label className="text-xs font-semibold text-slate-600">{label}</Label>
+    <div className="relative">
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+      {children}
+    </div>
+  </div>
+);
+
+/* ── Main ── */
 const Register = () => {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'client',
-    location: ''
+    name: '', email: '', password: '', role: 'client', location: '',
   });
-  const [error, setError] = useState('');
+  const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -28,180 +64,159 @@ const Register = () => {
   }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setError('');
+  };
+
+  const handleRole = (val) => {
+    setFormData(prev => ({ ...prev, role: val }));
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.password || !formData.role) {
-      return setError('Please fill in all required fields.');
-    }
+    if (!formData.name || !formData.email || !formData.password || !formData.location)
+      return setError('Please fill in all fields.');
 
     setLoading(true);
     try {
       const result = await register(formData);
-      if (result.success) {
-        setSuccess(true);
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        setError(result.message);
-      }
-    } catch (err) {
-      setError('An unexpected error occurred.');
-    } finally {
-      setLoading(false);
-    }
+      if (result.success) { setSuccess(true); setTimeout(() => navigate('/login'), 2000); }
+      else setError(result.message);
+    } catch { setError('An unexpected error occurred.'); }
+    finally { setLoading(false); }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 font-['Inter']">
-        <Card className="w-full max-w-[500px] border-none shadow-2xl shadow-emerald-100 rounded-[3rem] p-8 text-center bg-white animate-in zoom-in-95 duration-500">
-          <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-50 active:scale-95 transition-all">
-            <ShieldCheck size={48} />
-          </div>
-          <CardTitle className="text-4xl font-black text-slate-900 mb-4 tracking-tighter italic">Elite Status Secured</CardTitle>
-          <CardDescription className="text-slate-500 font-medium text-lg leading-relaxed">
-             Welcome to the inner circle. Your account was created successfully. <br/> Redirecting to secure login...
-          </CardDescription>
-        </Card>
-      </div>
-    );
-  }
+  if (success) return <SuccessScreen />;
+
+  const inputCls = 'pl-9 h-10 border-purple-100 focus-visible:ring-purple-500 focus-visible:border-purple-400';
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 lg:p-12 bg-slate-50 font-['Inter'] relative overflow-hidden">
-      
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-indigo-600/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-blue-600/5 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2"></div>
+    <div className="min-h-screen flex items-center justify-center bg-purple-50 px-4 pt-24 pb-12">
+      <Card className="w-full max-w-md shadow-lg border border-purple-100">
 
-      <Card className="w-full max-w-[640px] border-none shadow-2xl shadow-indigo-100/50 rounded-[3.5rem] p-6 lg:p-10 bg-white/80 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-700">
-        <CardHeader className="text-center pb-12 space-y-4">
-           <div className="mx-auto w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-slate-100 mb-2 relative">
-              <UserPlus size={28} />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white"></div>
-           </div>
-           <CardTitle className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter italic">Join The Community</CardTitle>
-           <CardDescription className="text-slate-500 font-medium">Pakistan's most reliable local services marketplace.</CardDescription>
+        {/* Header */}
+        <CardHeader className="text-center space-y-3 pt-7 pb-5">
+          <div className="mx-auto w-11 h-11 bg-purple-600 text-white rounded-xl flex items-center justify-center shadow-md relative">
+            <UserPlus className="h-5 w-5" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-bold text-slate-900">Create Account</CardTitle>
+            <CardDescription className="text-sm text-slate-500 mt-1">
+              Pakistan's local services marketplace
+            </CardDescription>
+          </div>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            <div className="md:col-span-2 space-y-2 group">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 group-focus-within:text-indigo-600 transition-colors">Digital Identity (Name)</label>
-              <div className="relative">
-                 <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500" size={18} />
-                 <Input
-                   type="text"
-                   name="name"
-                   value={formData.name}
-                   onChange={handleChange}
-                   placeholder="e.g. Abuzar Developer"
-                   className="h-14 pl-14 bg-slate-50 border-none rounded-2xl font-bold text-slate-800"
-                   required
-                 />
+        {/* Form */}
+        <CardContent className="px-6">
+          {error && (
+            <Alert variant="destructive" className="py-2 px-3 text-xs mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Full name */}
+            <Field label="Full Name" icon={User}>
+              <Input
+                type="text" name="name" value={formData.name}
+                onChange={handleChange} placeholder="e.g. Ali Hassan"
+                className={inputCls} required
+              />
+            </Field>
+
+            {/* 2-col grid on sm+ */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Email Address" icon={Mail}>
+                <Input
+                  type="email" name="email" value={formData.email}
+                  onChange={handleChange} placeholder="name@gmail.com"
+                  className={inputCls} required
+                />
+              </Field>
+
+              <Field label="Location" icon={MapPin}>
+                <Input
+                  type="text" name="location" value={formData.location}
+                  onChange={handleChange} placeholder="Karachi, Sindh"
+                  className={inputCls} required
+                />
+              </Field>
+
+              <Field label="Password" icon={Lock}>
+                <Input
+                  type="password" name="password" value={formData.password}
+                  onChange={handleChange} placeholder="••••••••"
+                  className={inputCls} required
+                />
+              </Field>
+
+              {/* Role select */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-600">I want to</Label>
+                <Select value={formData.role} onValueChange={handleRole}>
+                  <SelectTrigger className="h-10 border-purple-100 focus:ring-purple-500 text-sm">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="client">
+                      <span className="flex items-center gap-2">
+                        <Briefcase className="h-3.5 w-3.5" /> Hire Talent
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="freelancer">
+                      <span className="flex items-center gap-2">
+                        <GraduationCap className="h-3.5 w-3.5" /> Sell Skills
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Official Email</label>
-              <div className="relative">
-                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                 <Input
-                   type="email"
-                   name="email"
-                   value={formData.email}
-                   onChange={handleChange}
-                   placeholder="name@gmail.com"
-                   className="h-14 pl-14 bg-slate-50 border-none rounded-2xl font-bold text-slate-800"
-                   required
-                 />
-              </div>
-            </div>
-
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Operational Base</label>
-              <div className="relative">
-                 <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                 <Input
-                   type="text"
-                   name="location"
-                   value={formData.location}
-                   onChange={handleChange}
-                   placeholder="Karachi, Sindh"
-                   className="h-14 pl-14 bg-slate-50 border-none rounded-2xl font-bold text-slate-800"
-                   required
-                 />
-              </div>
-            </div>
-
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Select Purpose</label>
-              <div className="relative">
-                 <Briefcase className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" size={18} />
-                 <select
-                   name="role"
-                   value={formData.role}
-                   onChange={handleChange}
-                   className="w-full h-14 pl-14 pr-6 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
-                 >
-                   <option value="client">Hiring Talents (Client)</option>
-                   <option value="freelancer">Selling Skills (Freelancer)</option>
-                 </select>
-              </div>
-            </div>
-
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Secure Key</label>
-              <div className="relative">
-                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                 <Input
-                   type="password"
-                   name="password"
-                   value={formData.password}
-                   onChange={handleChange}
-                   placeholder="••••••••"
-                   className="h-14 pl-14 bg-slate-50 border-none rounded-2xl font-bold text-slate-800"
-                   required
-                 />
-              </div>
-            </div>
-
-            <div className="md:col-span-2 pt-6">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-16 bg-indigo-600 hover:bg-black rounded-[1.5rem] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-indigo-100 transition-all active:scale-95"
-              >
-                {loading ? 'Processing Protocol...' : 'Create Secure ID'}
-              </Button>
-            </div>
+            {/* Submit */}
+            <Button
+              type="submit" disabled={loading}
+              className="w-full h-10 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm mt-1"
+            >
+              {loading ? 'Creating account…' : 'Create Account'}
+            </Button>
           </form>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-10 pt-10">
-           <div className="flex items-center gap-6 w-full">
-              <div className="h-px bg-slate-100 flex-grow"></div>
-              <p className="text-slate-500 text-center font-bold text-xs">
-                Already part of the network?{' '}
-                <Link to="/login" className="text-indigo-600 font-black hover:text-black transition-colors ml-1 uppercase tracking-tighter">Login Now</Link>
-              </p>
-              <div className="h-px bg-slate-100 flex-grow"></div>
-           </div>
+        {/* Footer */}
+        <CardFooter className="flex flex-col gap-4 px-6 pb-7 pt-2">
+          <div className="flex items-center gap-3 w-full">
+            <Separator className="flex-1" />
+            <span className="text-[10px] text-slate-400 uppercase tracking-widest">or</span>
+            <Separator className="flex-1" />
+          </div>
 
-           <div className="flex flex-wrap justify-center gap-6 text-slate-300">
-              <div className="flex items-center gap-2">
-                 <ShieldCheck size={16} />
-                 <span className="text-[8px] font-black uppercase tracking-widest">Encrypted</span>
-              </div>
-              <div className="flex items-center gap-2">
-                 <GraduationCap size={16} />
-                 <span className="text-[8px] font-black uppercase tracking-widest">Verified</span>
-              </div>
-           </div>
+          <p className="text-sm text-slate-500 text-center">
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              className="text-purple-600 font-semibold hover:text-purple-800 inline-flex items-center gap-0.5 transition-colors"
+            >
+              Sign in <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </p>
+
+          <div className="flex items-center justify-center gap-4 text-slate-400">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-medium">Encrypted</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <GraduationCap className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-medium">Verified</span>
+            </div>
+          </div>
         </CardFooter>
+
       </Card>
     </div>
   );

@@ -1,84 +1,94 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import DashboardLayout from '../components/DashboardLayout';
-import CustomerOverview from './dashboard/CustomerOverview';
-import BrowseJobs from './dashboard/BrowseJobs';
-import HiredProviders from './dashboard/HiredProviders';
-import BrowseServicesDashboard from './dashboard/BrowseServicesDashboard';
-import Chat from './dashboard/Chat';
-import Reviews from './dashboard/Reviews';
-import Notifications from './dashboard/Notifications';
-import Settings from './dashboard/Settings';
-import PostJob from './dashboard/PostJob';
-import MyPostedJobs from './dashboard/MyPostedJobs';
-import Applications from './dashboard/Applications';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import { Search, Briefcase, Star, MessageSquare, ClipboardList } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+
 const CustomerDashboard = () => {
-  const [activeView, setActiveView] = useState('overview');
-  const [data, setData] = useState({
-    userJobs: [],
-    totalSpent: 0,
-    hiredProviders: [],
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCustomerData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        
-        const [userJobsRes, paymentsRes] = await Promise.all([
-          axios.get('/api/jobs/user', config),
-          axios.get('/api/payment/history', config),
-        ]);
-
-        const spent = paymentsRes.data.reduce((acc, curr) => acc + curr.amount, 0);
-
-        setData({
-          userJobs: userJobsRes.data,
-          totalSpent: spent,
-          hiredProviders: [], 
-        });
-      } catch (err) {
-        console.error("Error fetching customer dashboard data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCustomerData();
-  }, []);
-
-  const renderView = () => {
-    switch (activeView) {
-      case 'overview': return <CustomerOverview stats={{ 
-        posted: data.userJobs.length, 
-        spent: data.totalSpent, 
-        active: data.userJobs.filter(j => j.status === 'in-progress').length, 
-        messages: 12 
-      }} />;
-      case 'post-job': return <PostJob />;
-      case 'my-jobs': return <MyPostedJobs jobs={data.userJobs} />;
-      case 'hired': return <HiredProviders />;
-      case 'chat': return <Chat />;
-      case 'reviews': return <Reviews />;
-      case 'settings': return <Settings />;
-      default: return <CustomerOverview />;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center">
-         <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-         <p className="text-slate-500 font-bold animate-pulse">Loading your dashboard...</p>
-      </div>
-    );
-  }
+  const { user } = useAuth();
+  const [activeHires, setActiveHires] = useState([]);
+  
+  const actions = [
+    { label: 'Find Freelancers', desc: 'Browse available local talents.', icon: Search, to: '/services', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+    { label: 'My Past Hires', desc: 'View complete jobs and reviews.', icon: Briefcase, to: '/active-hires', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: 'Messages', desc: 'Communicate with freelancers.', icon: MessageSquare, to: '/chat', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  ];
 
   return (
-    <DashboardLayout activeView={activeView} setActiveView={setActiveView}>
-      {renderView()}
-    </DashboardLayout>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center border-4 border-background shadow-sm overflow-hidden">
+              {user?.avatar ? (
+                <img src={user?.avatar} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-bold text-primary uppercase">{user?.name?.charAt(0)}</span>
+              )}
+            </div>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Welcome, {user?.name?.split(' ')[0]}</h1>
+            <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm font-medium">
+              Ready to hire top talents today?
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <Button asChild className="flex-1 md:flex-none gap-2">
+            <Link to="/services">
+              <Search size={16} /> Browse Services
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Actions Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {actions.map((act, i) => (
+          <Link key={i} to={act.to} className="block group h-full">
+            <Card className="border-border/50 shadow-none hover:shadow-md transition-all h-full">
+              <CardContent className="p-6">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${act.bg} ${act.color} mb-4 group-hover:scale-110 transition-transform`}>
+                  <act.icon size={24} strokeWidth={2.5} />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">{act.label}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{act.desc}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      {/* Active Hires Overview */}
+      <Card className="border-border/50 shadow-none">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Active Hires</CardTitle>
+          <CardDescription>Freelancers you are currently working with.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {activeHires.length > 0 ? (
+            <div className="space-y-4">
+               {/* Display active hires here */}
+            </div>
+          ) : (
+            <div className="py-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-border/50 rounded-xl">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <ClipboardList size={28} className="text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-foreground">No Active Hires</h3>
+              <p className="text-sm text-muted-foreground max-w-[250px] mx-auto mt-2">When you hire freelancers, they will appear here for easy management.</p>
+              <Button asChild variant="outline" className="mt-6">
+                <Link to="/services">Find Local Experts</Link>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   MoreVertical, 
@@ -8,168 +8,174 @@ import {
   Search,
   Filter,
   LayoutGrid,
-  List
+  List,
+  Star,
+  Package
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { api } from '@/utils/api';
+import { useAuth } from '@/context/AuthContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const MyServices = () => {
   const [viewMode, setViewMode] = useState('grid');
-  
-  // Mock data for services
-  const services = [
-    { 
-      id: 1, 
-      title: 'Professional Home Plumbing Services', 
-      price: 85, 
-      category: 'Plumbing', 
-      rating: 4.8, 
-      reviews: 24,
-      image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&q=80&w=300&h=200'
-    },
-    { 
-      id: 2, 
-      title: 'Deep House Cleaning & Sanitization', 
-      price: 120, 
-      category: 'Cleaning', 
-      rating: 4.9, 
-      reviews: 56,
-      image: 'https://images.unsplash.com/photo-1581578731548-c64695ce6958?auto=format&fit=crop&q=80&w=300&h=200'
-    },
-    { 
-      id: 3, 
-      title: 'Expert Electrical Repair & Wiring', 
-      price: 95, 
-      category: 'Electrical', 
-      rating: 4.7, 
-      reviews: 18,
-      image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=300&h=200'
-    },
-  ];
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await api.get('/services');
+        // Filter services belonging to the current provider
+        const myServices = response.data.filter(s => s.providerId === user._id);
+        setServices(myServices);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user?._id) fetchServices();
+  }, [user]);
+
+  const filteredServices = services.filter(s => 
+    s.title.toLowerCase().includes(search.toLowerCase()) ||
+    s.category?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">My Services</h1>
-          <p className="text-slate-400">Manage and update your service offerings.</p>
+          <h1 className="text-3xl font-bold tracking-tight">My Services</h1>
+          <p className="text-muted-foreground">Manage and update your service offerings.</p>
         </div>
-        <Link 
-          to="/dashboard/provider/services/create"
-          className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 whitespace-nowrap"
-        >
-          <Plus size={20} />
-          Create New Service
-        </Link>
+        <Button asChild className="gap-2 h-11 px-6 rounded-xl font-bold">
+          <Link to="/dashboard/provider/services/create">
+            <Plus size={20} />
+            Create New Service
+          </Link>
+        </Button>
       </header>
 
       {/* Filter and View Toggle bar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-900/40 p-4 rounded-2xl border border-slate-800/50 backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-2xl border border-border shadow-sm">
         <div className="relative w-full sm:w-96 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
           <input 
             type="text" 
             placeholder="Search your services..."
-            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2.5 pl-11 pr-4 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all font-medium"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-muted/50 border border-input rounded-xl py-2.5 pl-11 pr-4 text-foreground placeholder-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
           />
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="flex bg-slate-800/50 p-1 rounded-xl border border-slate-700/50">
+          <div className="flex bg-muted p-1 rounded-xl border border-input">
             <button 
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white'}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               <LayoutGrid size={18} />
             </button>
             <button 
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white'}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               <List size={18} />
             </button>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-800/50 text-slate-300 hover:text-white border border-slate-700/50 rounded-xl font-medium transition-all group">
-            <Filter size={18} className="group-hover:text-indigo-400" />
+          <Button variant="outline" className="gap-2 rounded-xl">
+            <Filter size={18} />
             Filters
-          </button>
+          </Button>
         </div>
       </div>
 
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service) => (
-            <div key={service.id} className="bg-slate-900/50 border border-slate-800/50 rounded-[32px] overflow-hidden group hover:border-indigo-500/30 transition-all duration-500 hover:-translate-y-1.5 flex flex-col">
-              <div className="h-48 overflow-hidden relative">
-                <img 
-                  src={service.image} 
-                  alt={service.title} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute top-4 right-4 py-1.5 px-3 bg-black/40 backdrop-blur-md rounded-full text-white text-xs font-bold border border-white/10 uppercase tracking-wider">
-                  {service.category}
-                </div>
-              </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-indigo-300 transition-colors line-clamp-2 leading-snug">
-                  {service.title}
-                </h3>
-                
-                <div className="flex items-center gap-6 mt-auto">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Price</span>
-                    <span className="text-2xl font-black text-indigo-400">${service.price}</span>
+      {filteredServices.length === 0 ? (
+        <Card className="p-12 text-center border-dashed border-2">
+          <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+          <h3 className="text-lg font-medium">No services found</h3>
+          <p className="text-muted-foreground">Try adjusting your search or create a new service.</p>
+        </Card>
+      ) : (
+        <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-4"}>
+          {filteredServices.map((service) => (
+            viewMode === 'grid' ? (
+              <Card key={service._id} className="overflow-hidden group hover:border-primary/30 transition-all duration-300 flex flex-col border-slate-200/60 dark:border-slate-800/60">
+                <div className="h-48 overflow-hidden relative">
+                  <img 
+                    src={service.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop"} 
+                    alt={service.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute top-4 right-4 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-lg text-white text-[10px] font-bold border border-white/10 uppercase tracking-wider">
+                    {service.category}
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Rating</span>
-                    <div className="flex items-center gap-1">
-                      <Star className="text-amber-500 fill-amber-500" size={16} />
-                      <span className="text-white font-bold">{service.rating}</span>
-                      <span className="text-slate-500 font-medium text-xs">({service.reviews})</span>
+                </div>
+                <CardContent className="p-6 flex flex-col flex-grow">
+                  <h3 className="text-lg font-bold mb-3 group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+                    {service.title}
+                  </h3>
+                  
+                  <div className="flex items-center justify-between mt-auto">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Price</span>
+                      <span className="text-xl font-bold text-primary">${service.price}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Rating</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="text-amber-400 fill-amber-400" size={14} />
+                        <span className="font-bold text-sm">4.8</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-800/50 flex gap-3">
-                  <Link to={`/dashboard/provider/services/edit/${service.id}`} className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-800/80 hover:bg-indigo-600 text-white rounded-2xl font-bold text-sm transition-all active:scale-95">
-                    <Edit2 size={16} />
-                    Edit
-                  </Link>
-                  <button className="p-3 bg-slate-800/80 hover:bg-rose-500/20 hover:text-rose-500 text-slate-400 rounded-2xl transition-all active:scale-95 border border-transparent hover:border-rose-500/30">
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {services.map((service) => (
-            <div key={service.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-[24px] hover:border-indigo-500/30 transition-all flex items-center gap-6 group">
-              <img src={service.image} className="w-24 h-24 rounded-2xl object-cover" />
-              <div className="flex-grow">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em]">{service.category}</span>
-                </div>
-                <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">{service.title}</h3>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-indigo-400 font-bold text-xl">${service.price}</span>
-                  <div className="flex items-center gap-1.5 text-sm">
-                    <Star className="text-amber-500 fill-amber-500" size={14} />
-                    <span className="text-white font-semibold">{service.rating}</span>
-                    <span className="text-slate-500 font-medium text-xs">({service.reviews} reviews)</span>
+                  <div className="mt-6 pt-6 border-t flex gap-2">
+                    <Button variant="outline" asChild className="flex-1 rounded-xl">
+                      <Link to={`/dashboard/provider/services/edit/${service._id}`}>
+                        <Edit2 size={16} className="mr-2" /> Edit
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="px-3 rounded-xl text-destructive hover:bg-destructive/10">
+                      <Trash2 size={18} />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card key={service._id} className="p-4 hover:border-primary/30 transition-all border-slate-200/60 dark:border-slate-800/60">
+                <div className="flex items-center gap-6">
+                  <img src={service.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop"} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                  <div className="flex-grow min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[9px] text-primary font-bold uppercase tracking-wider bg-primary/10 px-1.5 py-0.5 rounded">{service.category}</span>
+                    </div>
+                    <h3 className="font-bold truncate">{service.title}</h3>
+                    <div className="flex items-center gap-4 mt-1">
+                      <span className="text-primary font-bold text-lg">${service.price}</span>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Star className="text-amber-400 fill-amber-400" size={14} />
+                        <span className="font-semibold text-xs text-muted-foreground">4.8 (24 reviews)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" asChild className="rounded-xl">
+                      <Link to={`/dashboard/provider/services/edit/${service._id}`}><Edit2 size={18} /></Link>
+                    </Button>
+                    <Button variant="outline" size="icon" className="rounded-xl text-destructive hover:bg-destructive/10"><Trash2 size={18} /></Button>
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-2 pr-4">
-                <button className="p-3 bg-slate-800 hover:bg-indigo-600 text-white rounded-xl transition-all border border-slate-700/50 active:scale-95">
-                  <Edit2 size={18} />
-                </button>
-                <button className="p-3 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-500 text-slate-400 rounded-xl transition-all border border-slate-700/50 active:scale-95">
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            </div>
+              </Card>
+            )
           ))}
         </div>
       )}
@@ -178,3 +184,4 @@ const MyServices = () => {
 };
 
 export default MyServices;
+

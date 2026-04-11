@@ -55,9 +55,7 @@ const LiveTracking = () => {
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        const res = await axios.get(`/api/bookings/${bookingId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get(`/bookings/${bookingId}`);
         setBooking(res.data);
         
         // Initial positions from DB

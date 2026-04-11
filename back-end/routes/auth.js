@@ -16,7 +16,7 @@ const generateToken = (userId) => {
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, location } = req.body;
 
     // Validation
     if (!name || !email || !password) {
@@ -45,6 +45,7 @@ router.post("/register", async (req, res) => {
       email,
       password,
       role: role || "client",
+      location: location || "",
     });
 
     // Generate token
@@ -58,6 +59,7 @@ router.post("/register", async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        location: user.location,
       },
     });
   } catch (error) {

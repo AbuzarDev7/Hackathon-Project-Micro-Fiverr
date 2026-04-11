@@ -16,6 +16,9 @@ import ProviderDashboard from './pages/provider/ProviderDashboard';
 import MyServices from './pages/provider/MyServices';
 import CreateService from './pages/provider/CreateService';
 import MyApplications from './pages/provider/MyApplications';
+import Orders from './pages/provider/Orders';
+import Reviews from './pages/provider/Reviews';
+import Earnings from './pages/provider/Earnings';
 
 // Client Pages (Restricted Experience)
 import LeaveReview from './pages/client/LeaveReview';
@@ -52,7 +55,10 @@ const freelancerRoutes = [
   { path: 'services/create',   element: <CreateService /> },      // /dashboard/provider/services/create
   { path: 'services/edit/:id', element: <CreateService /> },      // /dashboard/provider/services/edit/:id
   { path: 'applications',      element: <MyApplications /> },     // /dashboard/provider/applications
-  { path: 'chat',              element: <ChatPage /> },           // /dashboard/provider/chat
+  { path: 'orders',            element: <Orders /> },             // /dashboard/provider/orders
+  { path: 'messages',          element: <ChatPage /> },           // /dashboard/provider/messages
+  { path: 'reviews',           element: <Reviews /> },            // /dashboard/provider/reviews
+  { path: 'earnings',          element: <Earnings /> },           // /dashboard/provider/earnings
   { path: 'profile',           element: <EditProfile /> },        // /dashboard/provider/profile
 ];
 
@@ -105,6 +111,16 @@ const mapRoutes = (routes) =>
 
 
 
+const PublicRoute = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
+  if (isAuthenticated && user?.role === ROLES.FREELANCER) {
+    return <Navigate to="/dashboard/provider" replace />;
+  }
+  return children;
+};
+
+
+
 function App() {
   return (
     <AuthProvider>
@@ -112,13 +128,13 @@ function App() {
         <TrackingRequestModal />
         <Routes>
           {/* ── Public Routes ── */}
-          <Route path="/"         element={<MainLayout><Home /></MainLayout>} />
-          <Route path="/login"    element={<MainLayout><Login /></MainLayout>} />
-          <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
-          <Route path="/jobs"         element={<MainLayout><BrowseJobs /></MainLayout>} />
-          <Route path="/jobs/:id" element={<MainLayout><JobDetail /></MainLayout>} />
-          <Route path="/services" element={<MainLayout><ServiceListing /></MainLayout>} />
-          <Route path="/services/:id" element={<MainLayout><ServiceDetail /></MainLayout>} />
+          <Route path="/"         element={<PublicRoute><MainLayout><Home /></MainLayout></PublicRoute>} />
+          <Route path="/login"    element={<PublicRoute><MainLayout><Login /></MainLayout></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><MainLayout><Register /></MainLayout></PublicRoute>} />
+          <Route path="/jobs"         element={<PublicRoute><MainLayout><BrowseJobs /></MainLayout></PublicRoute>} />
+          <Route path="/jobs/:id" element={<PublicRoute><MainLayout><JobDetail /></MainLayout></PublicRoute>} />
+          <Route path="/services" element={<PublicRoute><MainLayout><ServiceListing /></MainLayout></PublicRoute>} />
+          <Route path="/services/:id" element={<PublicRoute><MainLayout><ServiceDetail /></MainLayout></PublicRoute>} />
           <Route path="/radar" element={<MainLayout><ProtectedRoute roles={[ROLES.CLIENT]}><FreelancerRadar /></ProtectedRoute></MainLayout>} />
           <Route path="/track-client/:bookingId" element={<ProtectedRoute roles={[ROLES.FREELANCER]}><LiveClientTracking /></ProtectedRoute>} />
           <Route path="/checkout/:serviceId" element={<MainLayout><ProtectedRoute><Checkout /></ProtectedRoute></MainLayout>} />

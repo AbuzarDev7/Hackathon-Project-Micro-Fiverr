@@ -1,8 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-
-const API_URL = ''; // Empty string means use relative path (Vite proxy will handle it)
-axios.defaults.baseURL = ''; 
+import api from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -19,28 +16,12 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  // Helper to set headers
-  const setAuthHeader = (t) => {
-    if (t) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${t}`;
-      console.log('🔑 Auth Header Set');
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-      console.log('🔓 Auth Header Cleared');
-    }
-  };
-
-  // Set header on initial load
-  useEffect(() => {
-    if (token) setAuthHeader(token);
-  }, []);
-
   useEffect(() => {
     const checkUser = async () => {
       if (token) {
         console.log('📡 Checking user status...');
         try {
-          const response = await axios.get(`${API_URL}/api/auth/me`);
+          const response = await api.get('/auth/me');
           console.log('✅ User check successful');
           setUser(response.data.user);
         } catch (error) {
@@ -50,7 +31,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('token');
             setToken(null);
             setUser(null);
-            setAuthHeader(null);
           }
         }
       } else {
@@ -66,14 +46,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     console.log(`📡 Attempting login for: ${email}`);
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+      const response = await api.post('/auth/login', { email, password });
       const { token: newToken, user: newUser } = response.data;
       
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser)); // persist user data
       setToken(newToken);
       setUser(newUser);
-      setAuthHeader(newToken);
       
       console.log('✅ Login successful');
       return { success: true, user: newUser };
@@ -102,14 +81,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     console.log(`📡 Attempting registration for: ${userData.email}`);
     try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, userData);
+      const response = await api.post('/auth/register', userData);
       const { token: newToken, user: newUser } = response.data;
       
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser)); // persist user data
       setToken(newToken);
       setUser(newUser);
-      setAuthHeader(newToken);
       
       console.log('✅ Registration successful');
       return { success: true, user: newUser };
@@ -143,7 +121,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user'); // clear saved user on logout
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   const value = {

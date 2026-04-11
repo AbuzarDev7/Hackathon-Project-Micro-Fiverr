@@ -9,8 +9,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // allow all frontend origins
-    methods: ["GET", "POST"]
+    origin: ["http://localhost:5173", "http://localhost:3000"], // Explicitly allow Vite and React default ports
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
@@ -113,7 +114,7 @@ io.on("connection", (socket) => {
 // CORS configuration
 app.use(
   cors({
-    origin: true, // Allow all origins in dev for easier connectivity
+    origin: ["http://localhost:5173", "http://localhost:3000"], // Allow Vite and CRA
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -175,7 +176,17 @@ app.use((err, req, res, next) => {
 
 // ==================== SERVER & DATABASE ====================
 const MONGO_URI = process.env.MONGO_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 5000;
+
+if (!MONGO_URI) {
+  console.error("❌ CRITICAL ERROR: MONGO_URI is not defined in .env file!");
+  process.exit(1);
+}
+
+if (!JWT_SECRET) {
+  console.warn("⚠️ WARNING: JWT_SECRET is not defined. Authentication will fail!");
+}
 
 const connectDB = async () => {
   try {

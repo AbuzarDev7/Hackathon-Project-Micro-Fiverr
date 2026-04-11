@@ -1,33 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { 
-  PlusCircle, 
   TrendingUp, 
   Star, 
   Users, 
   Briefcase,
   ClipboardList,
   MessageSquare,
-  Settings,
-  Layout,
-  MapPin,
-  CheckCircle2,
-  Zap
+  Zap,
+  ArrowRight,
+  ShieldCheck,
+  Plus,
+  LogOut,
+  Navigation,
+  Wallet,
+  ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import LocationSender from '../../components/tracking/LocationSender';
 import socket from '../../utils/socket';
+import { api } from '../../utils/api';
 import { Badge } from '../../components/ui/Badge';
-
-const Stars = ({ size }) => <Star size={size} />;
+import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 
 const ProviderDashboard = () => {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
+  const navigate = useNavigate();
   const [vendorStats, setVendorStats] = useState({
     servicesCount: 0,
     activeBookings: 0,
-    rating: user?.rating || 5.0,
+    rating: user?.rating || 4.9,
     earnings: 0
   });
 
@@ -35,25 +38,35 @@ const ProviderDashboard = () => {
   const [balance, setBalance] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [isOnline, setIsOnline] = useState(user?.isOnline || false);
+  const [activeBookingId, setActiveBookingId] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const servicesRes = await axios.get('/api/services/provider', config);
-        setVendorStats(prev => ({ ...prev, servicesCount: servicesRes.data.length }));
-
-        const historyRes = await axios.get('/api/payment/history', config);
-        setTransactions(historyRes.data);
+        const statsRes = await api.get('/bookings/provider/stats');
+        const bookingsRes = await api.get('/bookings/provider');
+        const servicesRes = await api.get('/services');
         
-        const profileRes = await axios.get('/api/auth/me', config);
-        setBalance(profileRes.data.user?.balance || 0);
+        const myServices = servicesRes.data.filter(s => s.providerId === user._id);
+        const active = bookingsRes.data.find(b => b.status === 'active' || b.status === 'Paid');
+        
+        if (active) setActiveBookingId(active._id);
+
+        setVendorStats({
+          servicesCount: myServices.length,
+          activeBookings: bookingsRes.data.filter(b => b.status === 'active' || b.status === 'Paid').length,
+          rating: user?.rating || 4.9,
+          earnings: statsRes.data.totalEarned
+        });
+
+        setBalance(statsRes.data.balance);
+        
       } catch (err) {
         console.error("Error fetching provider stats", err);
       }
     };
-    if (token) fetchStats();
-  }, [token]);
+    if (user?._id) fetchStats();
+  }, [user]);
 
   const toggleOnline = () => {
     const newStatus = !isOnline;
@@ -71,138 +84,196 @@ const ProviderDashboard = () => {
     socket.on("payment_received", (data) => {
       setBalance(prev => prev + Number(data.amount));
       setNotifications(prev => [data, ...prev]);
-      setTransactions(prev => [{
-        _id: data.transactionId || Math.random().toString(),
-        amount: data.amount,
-        clientId: { name: data.clientName },
-        serviceId: { title: 'Direct Credit' },
-        createdAt: new Date()
-      }, ...prev]);
     });
     return () => socket.off("payment_received");
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const stats = [
-    { label: 'Active Services', value: vendorStats.servicesCount, icon: Briefcase, color: 'bg-indigo-500/10 text-indigo-500' },
-    { label: 'Total Ledgers', value: transactions.length, icon: Users, color: 'bg-emerald-500/10 text-emerald-500' },
-    { label: 'Avg. Rating', value: vendorStats.rating, icon: Star, color: 'bg-amber-500/10 text-amber-500' },
-    { label: 'Live Balance', value: `Rs. ${balance.toLocaleString()}`, icon: TrendingUp, color: 'bg-indigo-500/10 text-indigo-500' },
+    { label: 'Active services', value: vendorStats.servicesCount, icon: Briefcase, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Active Orders', value: vendorStats.activeBookings, icon: ShoppingBag, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+    { label: 'Avg. Rating', value: vendorStats.rating, icon: Star, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: 'Earnings', value: `$${balance.toLocaleString()}`, icon: Wallet, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   ];
 
   return (
-    <div className="space-y-10 pb-20 font-['Outfit'] animate-in fade-in duration-500">
-      <header className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between gap-10">
-        <div className="flex flex-col md:flex-row items-center gap-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
           <div className="relative">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-indigo-600 rounded-[2.5rem] p-1 shadow-2xl">
-              <div className="w-full h-full bg-slate-900 rounded-[2.2rem] flex items-center justify-center overflow-hidden border-4 border-slate-900">
-                {user?.avatar ? (
-                  <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-4xl font-black text-indigo-500 uppercase">{user?.name?.charAt(0)}</span>
-                )}
-              </div>
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center border-4 border-background shadow-sm overflow-hidden">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-bold text-primary uppercase">{user?.name?.charAt(0)}</span>
+              )}
             </div>
+            <div className={`absolute bottom-0 right-0 w-5 h-5 border-2 border-background rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
           </div>
-          <div className="text-center md:text-left">
-            <h1 className="text-4xl font-black text-white italic tracking-tighter">Status: {isOnline ? 'Active' : 'Standby'}</h1>
-            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2 italic">Logged in as {user?.name}</p>
-            <button onClick={toggleOnline} className={`mt-4 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${isOnline ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
-               {isOnline ? 'Go Offline' : 'Set Active'}
-            </button>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight italic">Welcome back, {user?.name?.split(' ')[0]}</h1>
+            <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm font-medium">
+              Freelancer Portal •  
+              <Badge variant={isOnline ? 'default' : 'secondary'} className={isOnline ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>
+                {isOnline ? 'Online' : 'Offline'}
+              </Badge>
+            </p>
           </div>
         </div>
-
-        <div className="flex gap-4">
-          <Link to="/dashboard/provider/services/create" className="px-8 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 active:scale-95 transition-all uppercase tracking-widest text-[10px]">
-            New Gig
-          </Link>
-          <Link to="/profile" className="px-8 py-4 bg-slate-800 text-white font-black rounded-2xl active:scale-95 transition-all uppercase tracking-widest text-[10px]">
-            Settings
-          </Link>
+        <div className="flex items-center flex-wrap gap-3 w-full md:w-auto">
+          <Button variant="outline" onClick={toggleOnline} className="flex-1 md:flex-none h-11 px-6 rounded-xl">
+            {isOnline ? 'Go Offline' : 'Set Active'}
+          </Button>
+          <Button asChild className="flex-1 md:flex-none gap-2 h-11 px-6 rounded-xl font-bold">
+            <Link to="/dashboard/provider/services/create">
+              <Plus size={16} /> New Service
+            </Link>
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={handleLogout} 
+            className="flex-1 md:flex-none gap-2 h-11 px-6 rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 font-bold border border-red-100"
+          >
+            <LogOut size={16} /> Sign Out
+          </Button>
         </div>
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {stats.map((stat, idx) => (
-          <div key={idx} className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] hover:border-indigo-500 transition-all">
-            <div className={`w-12 h-12 ${stat.color} rounded-2xl flex items-center justify-center mb-6`}>
-              <stat.icon size={24} />
-            </div>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
-            <h3 className="text-3xl font-black text-white tracking-tighter">{stat.value}</h3>
-          </div>
+          <Card key={idx} className="border-border/50 shadow-none hover:shadow-md transition-all rounded-2xl group cursor-pointer hover:border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+                  <h3 className="text-2xl font-black text-foreground mt-2">{stat.value}</h3>
+                </div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
+                  <stat.icon size={22} strokeWidth={2.5} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-2xl font-black text-white italic px-4">Transaction Ledger</h2>
-          <div className="space-y-4">
-             {notifications.map((n, i) => (
-                <div key={i} className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-[2rem] flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <Zap className="text-emerald-500" size={24} />
-                      <div>
-                         <h4 className="text-white font-black text-sm uppercase italic">Credit Success</h4>
-                         <p className="text-emerald-400 text-xs">Rs. {n.amount} from {n.clientName}</p>
-                      </div>
-                   </div>
-                   <Badge className="bg-emerald-500 text-white border-none">Live Verified</Badge>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        
+        {/* Main Content */}
+        <div className="xl:col-span-2 space-y-6">
+          <Card className="border-border/50 shadow-none rounded-[32px] overflow-hidden">
+            <CardHeader className="pb-4 bg-muted/20 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-bold">Quick Actions</CardTitle>
+                  <CardDescription>Manage your ongoing tasks and performance</CardDescription>
                 </div>
-             ))}
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-50 border-dashed" asChild>
+                  <Link to="/dashboard/provider/orders">
+                    <ShoppingBag className="w-6 h-6 text-primary" />
+                    <span>View Orders</span>
+                  </Link>
+                </Button>
+                <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-50 border-dashed" asChild>
+                  <Link to="/dashboard/provider/messages">
+                    <MessageSquare className="w-6 h-6 text-primary" />
+                    <span>Messages</span>
+                  </Link>
+                </Button>
+            </CardContent>
+          </Card>
 
-             {transactions.length > 0 ? (
-                transactions.map((txn, i) => (
-                   <div key={txn._id || i} className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] hover:bg-slate-800 transition-all">
-                      <div className="flex justify-between items-center">
-                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-indigo-500">
-                               <Briefcase size={18} />
-                            </div>
-                            <div>
-                               <h4 className="text-white font-black text-sm">{txn.serviceId?.title || 'Secure Payment'}</h4>
-                               <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Client: {txn.clientId?.name || 'Authorized Client'}</p>
-                            </div>
-                         </div>
-                         <div className="text-right">
-                            <p className="text-white font-black text-lg italic">Rs. {txn.amount.toLocaleString()}</p>
-                            <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest">{new Date(txn.createdAt).toLocaleDateString()}</p>
-                         </div>
-                      </div>
-                   </div>
-                ))
-             ) : (
-                <div className="bg-slate-900 border border-slate-800 p-16 rounded-[3rem] text-center">
-                   <ClipboardList size={40} className="mx-auto text-slate-700 mb-4" />
-                   <p className="text-slate-500 font-bold italic uppercase tracking-widest text-xs">Ledger Clear</p>
+          {activeBookingId && (
+            <Card className="border-primary/20 bg-primary/5 rounded-[32px]">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                    <Navigation className="text-primary w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Active Service in Progress</h3>
+                    <p className="text-sm text-muted-foreground">Tracking client and providing real-time updates</p>
+                  </div>
                 </div>
-             )}
-          </div>
+                <Button onClick={() => navigate(`/track-client/${activeBookingId}`)}>
+                  Track Now
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        <div className="space-y-8">
-           <LocationSender bookingId="DEMO" userId={user?._id} />
-           <div className="bg-indigo-600 rounded-[3rem] p-10 text-white">
-              <h3 className="text-2xl font-black italic">Platform Growth</h3>
-              <p className="text-indigo-100 text-sm mt-4 font-medium italic">Complete 2 more orders to unlock Professional status.</p>
-           </div>
-           <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10">
-              <h3 className="text-white font-black uppercase tracking-widest text-sm border-b border-slate-800 pb-4 italic">Shortcuts</h3>
-              <Link to="/active-hires" className="flex items-center gap-4 mt-6 group">
-                 <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                    <Stars size={18} />
-                 </div>
-                 <div>
-                    <h4 className="text-white font-black text-xs uppercase tracking-widest italic">Sales Pipeline</h4>
-                    <p className="text-slate-600 text-[10px] font-medium uppercase tracking-widest mt-1">Manage Hires</p>
-                 </div>
-              </Link>
-           </div>
+        {/* Sidebar Widgets */}
+        <div className="space-y-6">
+           {activeBookingId && <LocationSender bookingId={activeBookingId} userId={user?._id} />}
+           
+           <Card className="bg-primary text-primary-foreground border-none rounded-[32px] overflow-hidden shadow-xl shadow-primary/20">
+             <CardContent className="p-8">
+                <div className="flex items-start gap-4">
+                  <div className="bg-white/20 p-3 rounded-2xl shrink-0">
+                    <ShieldCheck size={28} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold leading-none">Pro freelancer</h3>
+                    <p className="text-primary-foreground/80 text-sm mt-3 leading-relaxed">
+                      Maintain your high rating to stay in the priority list for new clients.
+                    </p>
+                    <Button size="sm" variant="secondary" className="mt-6 w-full font-bold h-10 rounded-xl">View Achievements</Button>
+                  </div>
+                </div>
+             </CardContent>
+           </Card>
+
+           <Card className="border-border/50 shadow-none rounded-[32px]">
+             <CardHeader className="pb-3 px-6 pt-6">
+               <CardTitle className="text-xs text-muted-foreground uppercase tracking-widest font-black">Dashboard Shortcuts</CardTitle>
+             </CardHeader>
+             <CardContent className="p-2 pt-0 flex flex-col gap-1">
+                 <Link to="/dashboard/provider/services" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-muted transition-colors group">
+                    <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
+                       <Briefcase size={18} />
+                    </div>
+                    <div>
+                       <h4 className="font-bold text-sm text-foreground uppercase tracking-tight">My Services</h4>
+                       <p className="text-muted-foreground text-[10px] font-bold mt-0.5">Edit & Manage gigs</p>
+                    </div>
+                 </Link>
+                 <Link to="/dashboard/provider/reviews" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-muted transition-colors group">
+                    <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors shrink-0">
+                       <Star size={18} />
+                    </div>
+                    <div>
+                       <h4 className="font-bold text-sm text-foreground uppercase tracking-tight">Reviews</h4>
+                       <p className="text-muted-foreground text-[10px] font-bold mt-0.5">See client feedback</p>
+                    </div>
+                 </Link>
+                 <Link to="/dashboard/provider/earnings" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-muted transition-colors group">
+                    <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors shrink-0">
+                       <Wallet size={18} />
+                    </div>
+                    <div>
+                       <h4 className="font-bold text-sm text-foreground uppercase tracking-tight">Earnings</h4>
+                       <p className="text-muted-foreground text-[10px] font-bold mt-0.5">Wallet & Transfers</p>
+                    </div>
+                 </Link>
+             </CardContent>
+           </Card>
         </div>
+
       </div>
     </div>
   );
 };
 
 export default ProviderDashboard;
+
