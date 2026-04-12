@@ -16,7 +16,7 @@ import {
   SheetTrigger, SheetClose,
 } from '@/components/ui/sheet';
 import {
-  Sparkles, Menu, LogOut, MessageSquare, LayoutDashboard,
+  Sparkles, Menu, LogOut, MessageSquare,
   Home, ShoppingBag, Radio, ChevronDown, User,
 } from 'lucide-react';
 
@@ -143,7 +143,10 @@ const Navbar = () => {
                 asChild
                 className="rounded-xl h-9 w-9 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
               >
-                <Link to="/dashboard"><LayoutDashboard className="h-4 w-4" /></Link>
+                <Link to="/chat">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                </Link>
               </Button>
 
               <DropdownMenu>
@@ -180,14 +183,6 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-1 bg-indigo-50" />
-                  <DropdownMenuItem asChild className="rounded-xl focus:bg-indigo-50 focus:text-indigo-600 cursor-pointer text-slate-600 hover:text-indigo-600">
-                    <Link to="/dashboard" className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <LayoutDashboard className="h-3.5 w-3.5 text-indigo-500" />
-                      </div>
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl focus:bg-indigo-50 focus:text-indigo-600 cursor-pointer text-slate-600 hover:text-indigo-600">
                     <Link to="/chat" className="flex items-center gap-3">
                       <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
@@ -298,17 +293,7 @@ const Navbar = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-xl font-semibold border-indigo-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all duration-200"
-                        asChild
-                      >
-                        <Link to="/dashboard"><LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />Dashboard</Link>
-                      </Button>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-xl font-semibold border-indigo-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all duration-200"
+                        className="w-full rounded-xl font-semibold border-indigo-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all duration-200"
                         asChild
                       >
                         <Link to="/chat"><MessageSquare className="mr-1.5 h-3.5 w-3.5" />Messages</Link>

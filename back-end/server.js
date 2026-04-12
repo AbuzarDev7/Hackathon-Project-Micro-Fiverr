@@ -9,7 +9,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:3000"], // Explicitly allow Vite and React default ports
+    origin: [
+      "http://localhost:5173", 
+      "http://localhost:3000", 
+      "https://hackathon-project-micro-fiverr-8lbi.vercel.app"
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
   }
@@ -114,7 +118,11 @@ io.on("connection", (socket) => {
 // CORS configuration
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"], // Allow Vite and CRA
+    origin: [
+      "http://localhost:5173", 
+      "http://localhost:3000", 
+      "https://hackathon-project-micro-fiverr-8lbi.vercel.app"
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

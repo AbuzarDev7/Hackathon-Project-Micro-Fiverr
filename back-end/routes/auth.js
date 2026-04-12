@@ -135,7 +135,7 @@ router.get("/me", protect, async (req, res) => {
 // PUT /api/auth/profile (Protected Route)
 router.put("/profile", protect, async (req, res) => {
   try {
-    const { name, avatar, phone, bio, skills, location } = req.body;
+    const { name, avatar, phone, bio, skills, location, languages, portfolioUrl, experienceLevel, education, certificates } = req.body;
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -150,6 +150,13 @@ router.put("/profile", protect, async (req, res) => {
     if (location !== undefined) user.location = location;
     if (req.body.lat !== undefined) user.lat = req.body.lat;
     if (req.body.long !== undefined) user.long = req.body.long;
+    
+    // New Fields
+    if (languages !== undefined) user.languages = Array.isArray(languages) ? languages : languages.split(",").map(s => s.trim());
+    if (portfolioUrl !== undefined) user.portfolioUrl = portfolioUrl;
+    if (experienceLevel !== undefined) user.experienceLevel = experienceLevel;
+    if (education !== undefined) user.education = education;
+    if (certificates !== undefined) user.certificates = Array.isArray(certificates) ? certificates : certificates.split(",").map(s => s.trim());
 
     await user.save();
 
@@ -164,7 +171,12 @@ router.put("/profile", protect, async (req, res) => {
         phone: user.phone,
         bio: user.bio,
         skills: user.skills,
-        location: user.location
+        location: user.location,
+        languages: user.languages,
+        portfolioUrl: user.portfolioUrl,
+        experienceLevel: user.experienceLevel,
+        education: user.education,
+        certificates: user.certificates
       }
     });
   } catch (error) {

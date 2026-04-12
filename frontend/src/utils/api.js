@@ -4,8 +4,13 @@ import axios from 'axios';
  * Centeralized API Instance
  * Handles baseURL, headers, and token injection automatically.
  */
+const isDevelopment = window.location.hostname === 'localhost';
+const BACKEND_URL = isDevelopment 
+  ? 'http://localhost:5000' 
+  : 'https://hackathon-project-micro-fiverr-backend.onrender.app'; // Replace with your actual Render URL
+
 const api = axios.create({
-  baseURL: '/api', // Vite proxy targets http://localhost:5000/api
+  baseURL: isDevelopment ? '/api' : `${BACKEND_URL}/api`,
   timeout: 10000,   // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',

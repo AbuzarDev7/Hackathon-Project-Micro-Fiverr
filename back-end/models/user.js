@@ -74,6 +74,32 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Freelancer Specific Fields
+    languages: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    portfolioUrl: {
+      type: String,
+      default: "",
+    },
+    experienceLevel: {
+      type: String,
+      enum: ["Beginner", "Intermediate", "Expert"],
+      default: "Beginner",
+    },
+    education: {
+      type: String,
+      default: "",
+    },
+    certificates: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
   },
   {
     timestamps: true,

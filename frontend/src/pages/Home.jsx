@@ -127,18 +127,18 @@ const Home = () => {
 
   const popularSearches = ['Plumber', 'Web Dev', 'Cleaning', 'Tutor'];
 
-  const suggestions = search.length > 1 
+  const suggestions = (search.length > 1 && Array.isArray(services))
     ? [...new Set(services
         .filter(s => s.title?.toLowerCase().includes(search.toLowerCase()))
         .map(s => s.title))]
         .slice(0, 5)
     : [];
 
-  const filteredServices = services.filter((s) => {
+  const filteredServices = Array.isArray(services) ? services.filter((s) => {
     const matchSearch   = s.title?.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchCategory = category === 'all' || s.category === category;
     return matchSearch && matchCategory;
-  });
+  }) : [];
 
   const scrollToMarketplace = () =>
     document.getElementById('marketplace')?.scrollIntoView({ behavior: 'smooth' });

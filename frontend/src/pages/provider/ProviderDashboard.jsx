@@ -13,19 +13,22 @@ import {
   LogOut,
   Navigation,
   Wallet,
-  ShoppingBag
+  ShoppingBag,
+  Camera,
+  CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import LocationSender from '../../components/tracking/LocationSender';
 import socket from '../../utils/socket';
 import { api } from '../../utils/api';
+import axios from 'axios';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 
 const ProviderDashboard = () => {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [vendorStats, setVendorStats] = useState({
     servicesCount: 0,
@@ -39,6 +42,43 @@ const ProviderDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [isOnline, setIsOnline] = useState(user?.isOnline || false);
   const [activeBookingId, setActiveBookingId] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  // Cloudinary Widget Setup
+  const handleUpload = () => {
+    const myWidget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: 'dfu6dxt8o',
+        uploadPreset: 'user-img',
+      },
+      async (error, result) => {
+        if (!error && result && result.event === "success") {
+          console.log("Dashboard Upload success:", result.info);
+          updateProfileImage(result.info.secure_url);
+        }
+      }
+    );
+    myWidget.open();
+  };
+
+  const updateProfileImage = async (imageUrl) => {
+    setUploading(true);
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const res = await axios.put('/api/auth/profile', { avatar: imageUrl }, config);
+      if (res.data?.user) {
+        updateUser(res.data.user);
+        setUploadSuccess(true);
+        setTimeout(() => setUploadSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error("Avatar update error:", err);
+      alert("Failed to update profile picture.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -106,21 +146,35 @@ const ProviderDashboard = () => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-6">
-          <div className="relative">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center border-4 border-background shadow-sm overflow-hidden">
+          <div className="relative group">
+            <div 
+              onClick={handleUpload}
+              className={`w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center border-4 border-background shadow-sm overflow-hidden cursor-pointer relative ${uploading ? 'opacity-50' : ''}`}
+            >
               {user?.avatar ? (
-                <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+                <img src={user.avatar} alt="Profile" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               ) : (
                 <span className="text-3xl font-bold text-primary uppercase">{user?.name?.charAt(0)}</span>
               )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                <Camera size={18} />
+              </div>
             </div>
             <div className={`absolute bottom-0 right-0 w-5 h-5 border-2 border-background rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+            {uploadSuccess && (
+              <div className="absolute -top-1 -right-1 bg-emerald-500 text-white rounded-full p-1 animate-in zoom-in duration-300">
+                <CheckCircle2 size={12} />
+              </div>
+            )}
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight italic">Welcome back, {user?.name?.split(' ')[0]}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-black text-foreground tracking-tight italic">Welcome back, {user?.name?.split(' ')[0]}</h1>
+              {uploading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>}
+            </div>
             <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm font-medium">
               Freelancer Portal •  
-              <Badge variant={isOnline ? 'default' : 'secondary'} className={isOnline ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>
+              <Badge variant={isOnline ? 'default' : 'secondary'} className={isOnline ? 'bg-emerald-500 hover:bg-emerald-600 border-none' : ''}>
                 {isOnline ? 'Online' : 'Offline'}
               </Badge>
             </p>
