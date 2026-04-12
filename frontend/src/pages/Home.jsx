@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { useDebounce } from '../hooks/useDebounce';
 
 import { Button } from '../components/ui/Button';
 import {
@@ -81,6 +82,8 @@ const Home = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300); // Shorter debounce for suggestions
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [category, setCategory] = useState('all');
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -107,16 +110,32 @@ const Home = () => {
   ];
 
   const categories = [
-    { value: 'all',        label: 'All' },
+    { value: 'all',          label: 'All' },
     { value: 'Home Service', label: 'Home' },
     { value: 'Technical',    label: 'Technical' },
     { value: 'Education',    label: 'Education' },
     { value: 'Events',       label: 'Events' },
     { value: 'Design',       label: 'Design' },
+    { value: 'Plumbing',     label: 'Plumbing' },
+    { value: 'Electrical',   label: 'Electrical' },
+    { value: 'Tutoring',     label: 'Tutoring' },
+    { value: 'Cleaning',     label: 'Cleaning' },
+    { value: 'Painting',     label: 'Painting' },
+    { value: 'Repairing',    label: 'Repairing' },
+    { value: 'Commercial',   label: 'Commercial' },
   ];
 
+  const popularSearches = ['Plumber', 'Web Dev', 'Cleaning', 'Tutor'];
+
+  const suggestions = search.length > 1 
+    ? [...new Set(services
+        .filter(s => s.title?.toLowerCase().includes(search.toLowerCase()))
+        .map(s => s.title))]
+        .slice(0, 5)
+    : [];
+
   const filteredServices = services.filter((s) => {
-    const matchSearch   = s.title?.toLowerCase().includes(search.toLowerCase());
+    const matchSearch   = s.title?.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchCategory = category === 'all' || s.category === category;
     return matchSearch && matchCategory;
   });
@@ -179,31 +198,83 @@ const Home = () => {
             </motion.p>
 
             {/* Search bar */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.45, delay: 0.25 }}
-              className="flex w-full max-w-xl gap-2 p-1.5 bg-background border border-border rounded-xl shadow-sm"
-            >
-              <div className="relative flex-1">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  size={16}
-                />
-                <Input
-                  placeholder="Plumber, tutor, web dev..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 h-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
-                />
-              </div>
-              <Button
-                onClick={scrollToMarketplace}
-                className="h-10 px-5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium"
+            <div className="w-full max-w-xl flex flex-col items-center gap-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.45, delay: 0.25 }}
+                className="relative flex w-full gap-2 p-1.5 bg-background border border-border rounded-2xl shadow-lg ring-1 ring-black/5"
               >
-                Explore gigs
-              </Button>
-            </motion.div>
+                <div className="relative flex-1">
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    size={16}
+                  />
+                  <Input
+                    placeholder="Search for any service..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    className="pl-10 h-11 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
+                  />
+
+                  {/* Suggestions Dropdown */}
+                  <AnimatePresence>
+                    {showSuggestions && suggestions.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full left-0 right-0 mt-2 p-2 bg-white/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl z-50 overflow-hidden"
+                      >
+                        {suggestions.map((suggestion, i) => (
+                          <button
+                            key={i}
+                            onMouseDown={() => {
+                              setSearch(suggestion);
+                              scrollToMarketplace();
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-violet-50 rounded-xl transition-colors group"
+                          >
+                            <Search size={14} className="text-muted-foreground group-hover:text-violet-600" />
+                            <span className="text-sm font-medium">{suggestion}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <Button
+                  onClick={scrollToMarketplace}
+                  className="h-11 px-6 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-all hover:shadow-lg hover:shadow-violet-200"
+                >
+                  Search
+                </Button>
+              </motion.div>
+
+              {/* Popular Chips */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex items-center gap-2 flex-wrap justify-center overflow-hidden"
+              >
+                <span className="text-xs text-muted-foreground mr-1">Popular:</span>
+                {popularSearches.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      setSearch(tag);
+                      scrollToMarketplace();
+                    }}
+                    className="px-3 py-1 text-[11px] font-medium bg-muted/60 hover:bg-violet-50 hover:text-violet-700 border border-border rounded-full transition-all"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </motion.div>
+            </div>
 
             {/* Stats */}
             <motion.div
