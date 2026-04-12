@@ -221,11 +221,24 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-// Start the Server unconditionally to ensure APIs remain reachable
+// Start the Server with enhanced error handling
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ ERROR: Port ${PORT} is already in use.`);
+    console.log(`💡 TIP: Try stopping other terminal windows or PM2 processes running on port ${PORT}.`);
+    process.exit(1);
+  } else {
+    console.error('❌ Server error:', err);
+  }
+});
+
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 Use the Health Check: http://localhost:${PORT}/`);
-  console.log(`💡 Note: If you see 502 error, make sure ONLY ONE terminal is running the backend.`);
+  console.log('===================================================');
+  console.log(`🚀 MICRO FIVERR BACKEND IS LIVE!`);
+  console.log(`📡 URL: http://localhost:${PORT}`);
+  console.log(`🏥 Health Check: http://localhost:${PORT}/api/auth/me`);
+  console.log('===================================================');
+  console.log(`💡 Tip: If you get 502/504, ensure only ONE terminal is running the backend.`);
 });
 
 // Connect to Database
